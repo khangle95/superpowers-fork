@@ -33,7 +33,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use super-bear:executing-plans to implement this plan task-by-task.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -94,23 +94,36 @@ git commit -m "feat: add specific feature"
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
 
-## Execution Handoff
+## Cross-Check Plan (Agent Team Debate)
 
-After saving the plan, offer execution choice:
+After drafting the plan, invoke `super-bear:design-cross-check` to challenge the plan through a full Agent Team debate. This is the critical quality gate — the last checkpoint before code gets written.
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:**
+The cross-check spawns an Author teammate (defends the plan) and a Reviewer teammate (challenges it). They debate directly with each other, max 3 rounds per concern. Unresolved disagreements are escalated to the user in plain product language.
 
-**1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review between tasks, fast iteration
+**Only proceed to Phase Gate after cross-check completes.**
 
-**2. Parallel Session (separate)** - Open new session with executing-plans, batch execution with checkpoints
+## Phase Gate — Execution Handoff
 
-**Which approach?"**
+After the plan passes cross-check, commit the implementation plan. Then use the `AskUserQuestion` tool to present transition options:
 
-**If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
+Question: "Implementation plan is complete, reviewed, and committed. How would you like to start building?"
+
+Options:
+1. **"Clear Context, Commit All Plans, and Start Execution" (Recommended)** — Commits both design doc and implementation plan (if not already committed), clears conversation context, then starts execution fresh. Uses subagent-driven-development with the committed plan as input.
+2. **"Subagent-Driven (this session)"** — Stay in this session. Dispatch fresh subagent per task, review between tasks.
+3. **"Parallel Session (separate)"** — Open new session in worktree with executing-plans skill for batch execution.
+
+**If user chooses "Clear Context and Start Execution":**
+- Ensure both `docs/plans/<design>.md` and `docs/plans/<plan>.md` are committed
+- Summarize: "Starting fresh execution session. Plans committed at `docs/plans/`."
+- Use /clear or equivalent to reset context
+- Then invoke subagent-driven-development skill, reading the committed plan as the task list
+
+**If user chooses "Subagent-Driven (this session)":**
+- **REQUIRED SUB-SKILL:** Use super-bear:subagent-driven-development
 - Stay in this session
 - Fresh subagent per task + code review
 
-**If Parallel Session chosen:**
+**If user chooses "Parallel Session":**
 - Guide them to open new session in worktree
-- **REQUIRED SUB-SKILL:** New session uses superpowers:executing-plans
+- **REQUIRED SUB-SKILL:** New session uses super-bear:executing-plans

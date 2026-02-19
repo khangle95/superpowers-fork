@@ -29,12 +29,15 @@ Task tool (general-purpose):
     ## Your Job
 
     Once you're clear on requirements:
-    1. Implement exactly what the task specifies
-    2. Write tests (following TDD if task says to)
-    3. Verify implementation works
-    4. Commit your work
-    5. Self-review (see below)
-    6. Report back
+    1. **Check for applicable skills** — before writing code, invoke any skills that match the task:
+       - **React/Next.js work:** invoke `vercel-react-best-practices` and follow its rules
+       - **UI/UX work:** invoke `ui-ux-pro-max` and follow design guidelines in CLAUDE.md
+    2. Implement exactly what the task specifies
+    3. Write tests (following TDD if task says to)
+    4. Verify implementation works
+    5. Commit your work
+    6. Self-review (see below)
+    7. Report back
 
     Work from: [directory]
 

@@ -1,157 +1,104 @@
-# Superpowers
+# Super Bear
 
-Superpowers is a complete software development workflow for your coding agents, built on top of a set of composable "skills" and some initial instructions that make sure your agent uses them.
+> Fork of [Superpowers](https://github.com/obra/superpowers) by [Jesse Vincent](https://github.com/obra). All original credit goes to him.
 
-## How it works
+Super Bear adds independent design validation and plan review to the Superpowers workflow. The core problem it solves: the same agent that creates a design is the one presenting it for approval — no fresh eyes, no challenge, no debate.
 
-It starts from the moment you fire up your coding agent. As soon as it sees that you're building something, it *doesn't* just jump into trying to write code. Instead, it steps back and asks you what you're really trying to do. 
+## What's different from Superpowers
 
-Once it's teased a spec out of the conversation, it shows it to you in chunks short enough to actually read and digest. 
+### New: Design sanity check (brainstorming phase)
 
-After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI (You Aren't Gonna Need It), and DRY. 
+After you approve a design, a `design-reviewer` subagent reads it with fresh eyes and produces:
+- A **readback** — restating the design in their own words to catch ambiguity
+- **Yes/no questions** about assumptions the design makes that you never confirmed
 
-Next up, once you say "go", it launches a *subagent-driven-development* process, having agents work through each engineering task, inspecting and reviewing their work, and continuing forward. It's not uncommon for Claude to be able to work autonomously for a couple hours at a time without deviating from the plan you put together.
+Output goes **directly to you**, not filtered by the agent that created the design (who may have made the wrong assumptions).
 
-There's a bunch more to it, but that's the core of the system. And because the skills trigger automatically, you don't need to do anything special. Your coding agent just has Superpowers.
+### New: Agent Team debate (planning phase)
 
+After an implementation plan is drafted, a `design-cross-check` skill spawns an Agent Team:
+- **Author** defends the plan
+- **Reviewer** challenges it (pre-mortem framing, steel-manning)
+- They debate via peer DMs (keeps the lead's context lean)
+- Max 3 rounds per concern, max 7 concerns
+- Unresolved disagreements escalate to you in **plain product language** (no code jargon)
+- Author applies accepted changes directly to the plan
 
-## Sponsorship
+Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 
-If Superpowers has helped you do stuff that makes money and you are so inclined, I'd greatly appreciate it if you'd consider [sponsoring my opensource work](https://github.com/sponsors/obra).
+### New: Phase gates with context clearing
 
-Thanks! 
+Each phase transition (brainstorming → planning → execution) offers a choice:
+- **Clear context and start fresh** (recommended) — gives the next phase clean, focused context
+- **Continue in this session** — if you want to reference previous discussion
 
-- Jesse
+### New: Subagent skill-checking
 
+Subagents dispatched during execution now check for applicable skills before writing code:
+- **React/Next.js work** → invokes `vercel-react-best-practices`
+- **UI/UX work** → invokes `ui-ux-pro-max` and follows design guidelines in CLAUDE.md
+
+### Renamed prefix
+
+All skill references use `super-bear:` instead of `superpowers:` (e.g., `super-bear:brainstorming`).
+
+---
 
 ## Installation
 
-**Note:** Installation differs by platform. Claude Code or Cursor have built-in plugin marketplaces. Codex and OpenCode require manual setup.
-
-
-### Claude Code (via Plugin Marketplace)
-
-In Claude Code, register the marketplace first:
+### Claude Code (local dev)
 
 ```bash
-/plugin marketplace add obra/superpowers-marketplace
+# Clone the repo
+git clone https://github.com/YOUR_USERNAME/super-bear.git
+
+# Register the local dev marketplace
+# Add to ~/.claude/settings.json:
+# "super-bear@super-bear-dev": true
 ```
 
-Then install the plugin from this marketplace:
+### Environment variable for Agent Teams
 
 ```bash
-/plugin install superpowers@superpowers-marketplace
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 ```
 
-### Cursor (via Plugin Marketplace)
+## The Workflow
 
-In Cursor Agent chat, install from marketplace:
-
-```text
-/plugin-add superpowers
-```
-
-### Codex
-
-Tell Codex:
+Same pipeline as Superpowers, with review gates added:
 
 ```
-Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.codex/INSTALL.md
+brainstorming
+  → design-reviewer sanity check (readback + assumption questions)
+  → phase gate
+writing-plans
+  → design-cross-check (Agent Team debate)
+  → phase gate
+execution (subagent-driven-development or executing-plans)
+  → subagents check for applicable skills before coding
+  → code review
+finishing-a-development-branch
 ```
 
-**Detailed docs:** [docs/README.codex.md](docs/README.codex.md)
+## New Files
 
-### OpenCode
+| File | Purpose |
+|------|---------|
+| `agents/design-reviewer.md` | Lightweight readback + assumption check agent |
+| `skills/design-cross-check/SKILL.md` | Agent Team debate orchestration |
+| `skills/design-cross-check/author-teammate-prompt.md` | Author spawn template |
+| `skills/design-cross-check/reviewer-teammate-prompt.md` | Reviewer spawn template (pre-mortem + steel-manning) |
+| `skills/design-cross-check/escalation-guide.md` | Translation guide for user-facing escalations |
 
-Tell OpenCode:
+## Everything else
 
-```
-Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.opencode/INSTALL.md
-```
-
-**Detailed docs:** [docs/README.opencode.md](docs/README.opencode.md)
-
-### Verify Installation
-
-Start a new session in your chosen platform and ask for something that should trigger a skill (for example, "help me plan this feature" or "let's debug this issue"). The agent should automatically invoke the relevant superpowers skill.
-
-## The Basic Workflow
-
-1. **brainstorming** - Activates before writing code. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves design document.
-
-2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
-
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
-
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
-
-5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
-
-6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
-
-7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
-
-**The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
-
-## What's Inside
-
-### Skills Library
-
-**Testing**
-- **test-driven-development** - RED-GREEN-REFACTOR cycle (includes testing anti-patterns reference)
-
-**Debugging**
-- **systematic-debugging** - 4-phase root cause process (includes root-cause-tracing, defense-in-depth, condition-based-waiting techniques)
-- **verification-before-completion** - Ensure it's actually fixed
-
-**Collaboration** 
-- **brainstorming** - Socratic design refinement
-- **writing-plans** - Detailed implementation plans
-- **executing-plans** - Batch execution with checkpoints
-- **dispatching-parallel-agents** - Concurrent subagent workflows
-- **requesting-code-review** - Pre-review checklist
-- **receiving-code-review** - Responding to feedback
-- **using-git-worktrees** - Parallel development branches
-- **finishing-a-development-branch** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
-
-**Meta**
-- **writing-skills** - Create new skills following best practices (includes testing methodology)
-- **using-superpowers** - Introduction to the skills system
-
-## Philosophy
-
-- **Test-Driven Development** - Write tests first, always
-- **Systematic over ad-hoc** - Process over guessing
-- **Complexity reduction** - Simplicity as primary goal
-- **Evidence over claims** - Verify before declaring success
-
-Read more: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
-
-## Contributing
-
-Skills live directly in this repository. To contribute:
-
-1. Fork the repository
-2. Create a branch for your skill
-3. Follow the `writing-skills` skill for creating and testing new skills
-4. Submit a PR
-
-See `skills/writing-skills/SKILL.md` for the complete guide.
-
-## Updating
-
-Skills update automatically when you update the plugin:
-
-```bash
-/plugin update superpowers
-```
+All other skills, commands, hooks, and architecture are inherited from Superpowers. See the [original README](https://github.com/obra/superpowers) for full documentation.
 
 ## License
 
 MIT License - see LICENSE file for details
 
-## Support
+## Credits
 
-- **Issues**: https://github.com/obra/superpowers/issues
-- **Marketplace**: https://github.com/obra/superpowers-marketplace
+- **Original project:** [Superpowers](https://github.com/obra/superpowers) by [Jesse Vincent](https://github.com/obra)
+- If Superpowers has helped you, consider [sponsoring Jesse's work](https://github.com/sponsors/obra)
