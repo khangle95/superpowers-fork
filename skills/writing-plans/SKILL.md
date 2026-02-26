@@ -94,17 +94,24 @@ git commit -m "feat: add specific feature"
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
 
-## Cross-Check Plan (Agent Team Debate)
+## RRI-T Plan Review
 
-After drafting the plan, invoke `super-bear:design-cross-check` to challenge the plan through a full Agent Team debate. This is the critical quality gate — the last checkpoint before code gets written.
+After drafting the plan, invoke `super-bear:rri-t` with phase=PLAN_REVIEW. This is the critical quality gate — the last checkpoint before code gets written.
 
-The cross-check spawns an Author teammate (defends the plan) and a Reviewer teammate (challenges it). They debate directly with each other, max 3 rounds per concern. Unresolved disagreements are escalated to the user in plain product language.
+The RRI-T team (5 personas: End User, BA, QA Destroyer, DevOps, Security Auditor) reviews the plan through their specialized lenses. Each persona tags findings as PASS / FAIL / PAINFUL / MISSING.
 
-**Only proceed to Phase Gate after cross-check completes.**
+If the team was already created during brainstorming (DISCOVER phase), they reuse context. If context was cleared, the skill spawns a new team and each persona reads their previous findings files to resume.
+
+The lead aggregates findings and presents to the user:
+- **FAIL** items require a user decision before proceeding
+- **PAINFUL** items presented as tradeoffs
+- **MISSING** items presented as scope questions
+
+**Only proceed to Phase Gate after plan review completes and user has decided on all FAIL items.**
 
 ## Phase Gate — Execution Handoff
 
-After the plan passes cross-check, commit the implementation plan. Then use the `AskUserQuestion` tool to present transition options:
+After the plan passes RRI-T review, commit the implementation plan. Then use the `AskUserQuestion` tool to present transition options:
 
 Question: "Implementation plan is complete, reviewed, and committed. How would you like to start building?"
 
