@@ -9,10 +9,7 @@
       "name": "super-bear",
       "description": "Core skills library with design validation and plan review",
       "version": "4.3.0",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/khangle95/superpowers-fork.git"
-      },
+      "source": "./",
       "author": {
         "name": "Khang Le"
       }
