@@ -34,8 +34,12 @@ When reviewing completed work, you will:
    - Ensure adherence to project-specific coding standards and conventions
 
 5. **Issue Identification and Recommendations**:
-   - Clearly categorize issues as: Critical (must fix), Important (should fix), or Suggestions (nice to have)
-   - For each issue, provide specific examples and actionable recommendations
+   - Tag each finding with one of 4 levels:
+     - **FAIL** — must fix before merging (broken behavior, security issue, data corruption risk)
+     - **PAINFUL** — works but causes friction (poor UX, confusing API, performance concern)
+     - **MISSING** — not implemented but expected from the plan or requirements
+     - **PASS** — correctly implemented, meets requirements
+   - For each FAIL/PAINFUL/MISSING, provide specific examples and actionable recommendations
    - When you identify plan deviations, explain whether they're problematic or beneficial
    - Suggest specific improvements with code examples when helpful
 
