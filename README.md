@@ -44,18 +44,21 @@ All skill references use `super-bear:` instead of `superpowers:` (e.g., `super-b
 
 ## Installation
 
-### Claude Code (local dev)
+In Claude Code, register the marketplace first:
 
-```bash
-# Clone the repo
-git clone https://github.com/YOUR_USERNAME/super-bear.git
+```
+/plugin marketplace add khangle95/superpowers-fork
+```
 
-# Register the local dev marketplace
-# Add to ~/.claude/settings.json:
-# "super-bear@super-bear-dev": true
+Then install the plugin:
+
+```
+/plugin install super-bear@super-bear-dev
 ```
 
 ### Environment variable for Agent Teams
+
+RRI-T discovery and plan review require agent teams:
 
 ```bash
 export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1

@@ -2,18 +2,16 @@
   "name": "super-bear-dev",
   "description": "Development marketplace for Super Bear core skills library",
   "owner": {
-    "name": "Jesse Vincent",
-    "email": "jesse@fsck.com"
+    "name": "Khang Le"
   },
   "plugins": [
     {
       "name": "super-bear",
-      "description": "Core skills library for Claude Code: TDD, debugging, collaboration patterns, and proven techniques",
+      "description": "Core skills library with design validation and plan review",
       "version": "4.3.0",
-      "source": "./",
+      "source": "https://github.com/khangle95/superpowers-fork",
       "author": {
-        "name": "Jesse Vincent",
-        "email": "jesse@fsck.com"
+        "name": "Khang Le"
       }
     }
   ]
