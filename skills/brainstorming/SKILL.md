@@ -25,9 +25,9 @@ You MUST create a task for each of these items and complete them in order:
 
 1. **Explore project context** — check files, docs, recent commits
 2. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
-3. **Propose 2-3 approaches** — with trade-offs and your recommendation
-4. **Present design** — in sections scaled to their complexity, get user approval after each section
-5. **Quick sanity check** — dispatch super-bear:design-reviewer subagent for a lightweight fresh-eyes review; incorporate valid gaps, present findings to user alongside design
+3. **RRI-T Discovery** — invoke super-bear:rri-t with DISCOVER phase; 5 personas identify hidden requirements from their perspectives; present consolidated findings to user for approval; user decisions inform approach selection
+4. **Propose 2-3 approaches** — with trade-offs and your recommendation, informed by discovery findings
+5. **Present design** — in sections scaled to their complexity, get user approval after each section
 6. **Write design doc** — save to `docs/plans/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Phase gate** — use AskUserQuestion to offer transition options (see Phase Gate section below)
 
@@ -37,12 +37,13 @@ You MUST create a task for each of these items and complete them in order:
 digraph brainstorming {
     "Explore project context" [shape=box];
     "Ask clarifying questions" [shape=box];
+    "RRI-T Discovery (5 personas)" [shape=box];
+    "Findings found?" [shape=diamond];
+    "Present findings to user" [shape=box];
+    "User approves findings?" [shape=diamond];
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
-    "Quick sanity check (design-reviewer subagent)" [shape=box];
-    "Gaps found?" [shape=diamond];
-    "Present findings to user" [shape=box];
     "Write design doc" [shape=box];
     "Commit design doc" [shape=box];
     "Phase gate (AskUserQuestion)" [shape=diamond];
@@ -50,15 +51,16 @@ digraph brainstorming {
     "Invoke writing-plans in this session" [shape=doublecircle];
 
     "Explore project context" -> "Ask clarifying questions";
-    "Ask clarifying questions" -> "Propose 2-3 approaches";
+    "Ask clarifying questions" -> "RRI-T Discovery (5 personas)";
+    "RRI-T Discovery (5 personas)" -> "Findings found?";
+    "Findings found?" -> "Present findings to user" [label="yes"];
+    "Findings found?" -> "Propose 2-3 approaches" [label="no findings"];
+    "Present findings to user" -> "User approves findings?";
+    "User approves findings?" -> "Propose 2-3 approaches" [label="decisions made"];
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Quick sanity check (design-reviewer subagent)" [label="yes"];
-    "Quick sanity check (design-reviewer subagent)" -> "Gaps found?";
-    "Gaps found?" -> "Present findings to user" [label="yes"];
-    "Present findings to user" -> "Present design sections";
-    "Gaps found?" -> "Write design doc" [label="no gaps"];
+    "User approves design?" -> "Write design doc" [label="yes"];
     "Write design doc" -> "Commit design doc";
     "Commit design doc" -> "Phase gate (AskUserQuestion)";
     "Phase gate (AskUserQuestion)" -> "Clear context + invoke writing-plans" [label="Clear Context and Start Planning"];
@@ -66,7 +68,7 @@ digraph brainstorming {
 }
 ```
 
-**The terminal state is the phase gate.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skill invoked after brainstorming is writing-plans (via the phase gate).
+**The terminal state is the phase gate.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skills invoked during brainstorming are rri-t (discovery phase, before approaches) and writing-plans (via the phase gate).
 
 ## The Process
 
@@ -89,20 +91,25 @@ digraph brainstorming {
 - Cover: architecture, components, data flow, error handling, testing
 - Be ready to go back and clarify if something doesn't make sense
 
-## Quick Design Sanity Check
+## RRI-T Discovery Phase
 
-After the user approves the design sections, dispatch a `design-reviewer` subagent with the design and the user's original request (not your interpretation — their actual words).
+After user Q&A (step 2), invoke `super-bear:rri-t` with phase=DISCOVER. This happens **before** proposing approaches so that discovery findings inform the design, not retroactively patch it.
 
-The reviewer produces two things:
-1. A **readback** — restating the design in their own words so the user can spot if it means something different than intended
-2. **Yes/no questions** about assumptions the design makes that the user never explicitly confirmed
+The RRI-T skill creates a team of 5 persona agents (End User, BA, QA Destroyer, DevOps, Security Auditor). Each persona reads the relevant code areas and identifies hidden requirements from their perspective.
 
-**Present the reviewer's output DIRECTLY to the user without editing or filtering it.** You (the lead) may have made these assumptions — that's exactly what this check catches. Do not dismiss or pre-answer any questions. Let the user respond.
+The lead (you) receives a consolidated findings list and presents it to the user as a checklist:
 
-After the user answers:
-- Revise the design based on their answers if needed
-- Then proceed to writing the design doc
-- If the user confirms everything matches, proceed directly
+- **MISSING** items — things users will need that aren't covered
+- **PAINFUL** items — things that will frustrate users
+
+**Present findings DIRECTLY to the user.** Do not filter or pre-answer. Let the user approve, reject, or modify each item.
+
+After the user responds:
+- Use approved findings to inform approach proposals (step 4)
+- Relay user decisions to the RRI-T team (they update their findings files)
+- If no findings, proceed directly to proposing approaches
+
+**Note:** The RRI-T team stays alive for the PLAN_REVIEW phase (invoked by writing-plans skill). If the user chooses "Clear Context and Start Planning" at the phase gate, the team will be reconstructed from findings files in the new session.
 
 ## After the Design
 
