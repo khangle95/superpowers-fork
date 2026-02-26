@@ -82,9 +82,9 @@ Write to `{FINDINGS_DIR}/ba.md` using the findings template. Each finding must h
 - A specific description with business rule reference
 - A code reference if applicable (file:line)
 
-### Reporting to Lead
+### Reporting
 
-After completing your review, message the lead:
+After completing your review, return your summary as your final output:
 
 ```
 "BA {PHASE} complete for {MODULE_NAME}. [N] findings: [X] PASS, [Y] FAIL, [Z] PAINFUL, [W] MISSING. Key concern: [one sentence or 'none']."
@@ -97,3 +97,4 @@ After completing your review, message the lead:
 - Check calculations with real numbers, not just structure
 - No performative language
 - When in doubt, flag it
+- **NEVER use Bash tool** — you are a code reader, not a code runner. Use only Read, Glob, Grep, and Write (for your findings file). Never run cargo, npm, node, or any build/compile/test commands.

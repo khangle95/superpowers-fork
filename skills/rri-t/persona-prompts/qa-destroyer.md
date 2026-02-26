@@ -84,9 +84,9 @@ Write to `{FINDINGS_DIR}/qa.md` using the findings template. Each finding must h
 - A specific reproduction scenario (input → expected → actual)
 - A code reference (file:line)
 
-### Reporting to Lead
+### Reporting
 
-After completing your review, message the lead:
+After completing your review, return your summary as your final output:
 
 ```
 "QA Destroyer {PHASE} complete for {MODULE_NAME}. [N] findings: [X] PASS, [Y] FAIL, [Z] PAINFUL, [W] MISSING. Key concern: [one sentence or 'none']."
@@ -100,3 +100,4 @@ After completing your review, message the lead:
 - Test the intersections — the bug is rarely in the obvious path
 - No performative language
 - Be relentless but precise
+- **NEVER use Bash tool** — you are a code reader, not a code runner. Use only Read, Glob, Grep, and Write (for your findings file). Never run cargo, npm, node, or any build/compile/test commands.

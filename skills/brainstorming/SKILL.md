@@ -95,9 +95,9 @@ digraph brainstorming {
 
 After user Q&A (step 2), invoke `super-bear:rri-t` with phase=DISCOVER. This happens **before** proposing approaches so that discovery findings inform the design, not retroactively patch it.
 
-The RRI-T skill creates a team of 5 persona agents (End User, BA, QA Destroyer, DevOps, Security Auditor). Each persona reads the relevant code areas and identifies hidden requirements from their perspective.
+The RRI-T skill spawns 5 persona subagents in parallel (End User, BA, QA Destroyer, DevOps, Security Auditor). Each reads the relevant code areas, writes findings to persistent files, and returns a summary.
 
-The lead (you) receives a consolidated findings list and presents it to the user as a checklist:
+You receive the consolidated findings and present them to the user as a checklist:
 
 - **MISSING** items — things users will need that aren't covered
 - **PAINFUL** items — things that will frustrate users
@@ -106,10 +106,10 @@ The lead (you) receives a consolidated findings list and presents it to the user
 
 After the user responds:
 - Use approved findings to inform approach proposals (step 4)
-- Relay user decisions to the RRI-T team (they update their findings files)
+- Update findings files with user decisions
 - If no findings, proceed directly to proposing approaches
 
-**Note:** The RRI-T team stays alive for the PLAN_REVIEW phase (invoked by writing-plans skill). If the user chooses "Clear Context and Start Planning" at the phase gate, the team will be reconstructed from findings files in the new session.
+**Note:** Findings persist in `.claude/rri-t/` files. The PLAN_REVIEW phase (invoked by writing-plans) spawns fresh subagents that read these files to resume context.
 
 ## After the Design
 

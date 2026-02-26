@@ -1,28 +1,27 @@
 ---
 name: rri-t
-description: "Use for structured quality review with 5 persona agents (End User, BA, QA Destroyer, DevOps, Security). Invoked by brainstorming (discovery), writing-plans (plan review), or directly for post-code verification. 4-level results: PASS/FAIL/PAINFUL/MISSING."
+description: "Use for structured quality review with 5 persona subagents (End User, BA, QA Destroyer, DevOps, Security). Invoked by brainstorming (discovery), writing-plans (plan review), or directly for post-code verification. 4-level results: PASS/FAIL/PAINFUL/MISSING."
 ---
 
 # RRI-T Quality Review
 
 ## Overview
 
-RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-cross-check with 5 specialized persona agents that review work through their domain lens. Each persona reads only code relevant to their area, writes findings to persistent files, and reports a summary to the lead.
+RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-cross-check with 5 specialized persona subagents that review work through their domain lens. Each persona reads only code relevant to their area, writes findings to persistent files, and returns a summary to the lead.
 
-**Announce at start:** "I'm using the RRI-T skill to run a [phase] review with 5 persona agents."
+**Announce at start:** "I'm using the RRI-T skill to run a [phase] review with 5 persona subagents."
 
 **This skill is invoked by other skills** — brainstorming (DISCOVER), writing-plans (PLAN_REVIEW), or directly for POST_CODE_VERIFY. It can also be invoked standalone.
 
 ## Prerequisites
 
-- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` must be enabled
 - Module context — what module/feature is being reviewed
 - Phase-specific artifact:
   - DISCOVER: project code + requirements
   - PLAN_REVIEW: implementation plan
   - POST_CODE_VERIFY: implemented code
 
-## Team Structure
+## Persona Structure
 
 | Persona | Focus | Reads |
 |---------|-------|-------|
@@ -32,7 +31,13 @@ RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-c
 | **DevOps** | Deploy, scaling, monitoring, backup, migration | Dockerfile, CI/CD, deploy scripts, migrations |
 | **Security Auditor** | Auth, injection, data exposure, rate limiting | Auth middleware, API routes, sanitization, RBAC |
 
-Team is created ONCE per session. If context was cleared and findings files exist, spawn a new team and each persona reads their previous findings to resume.
+Each persona is a **subagent** (Task tool) that runs, writes findings, returns a summary, and exits. Persistence lives in the findings files, not in agent processes.
+
+## Resource Safety
+
+Personas use `model: "sonnet"` — they read code and write structured findings, which does not require Opus-level reasoning. This reduces memory usage per agent by ~50%.
+
+All 5 subagents run in parallel via `run_in_background: true`. Each writes to its own findings file (no shared state conflicts). If the system is resource-constrained, the lead can spawn in batches of 2-3 instead of all 5.
 
 ## Module Detection and Findings Directory
 
@@ -77,18 +82,23 @@ Use templates from this skill's directory:
 
 **1. Detect module and create findings directory (if needed).**
 
-**2. Create the team (if not already created this session):**
+**2. Spawn 5 persona subagents in parallel** (read each template from `skills/rri-t/persona-prompts/`, fill placeholders, spawn):
 ```
-TeamCreate("rri-t")
-```
-
-**3. Spawn 5 personas** (read each template from `skills/rri-t/persona-prompts/`, fill placeholders, spawn):
-```
-Task(team_name="rri-t", name="end-user", prompt=[end-user.md with filled placeholders])
-Task(team_name="rri-t", name="ba", prompt=[ba.md with filled placeholders])
-Task(team_name="rri-t", name="qa-destroyer", prompt=[qa-destroyer.md with filled placeholders])
-Task(team_name="rri-t", name="devops", prompt=[devops.md with filled placeholders])
-Task(team_name="rri-t", name="security", prompt=[security-auditor.md with filled placeholders])
+Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
+  description="End User persona DISCOVER",
+  prompt=[end-user.md with filled placeholders])
+Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
+  description="BA persona DISCOVER",
+  prompt=[ba.md with filled placeholders])
+Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
+  description="QA Destroyer persona DISCOVER",
+  prompt=[qa-destroyer.md with filled placeholders])
+Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
+  description="DevOps persona DISCOVER",
+  prompt=[devops.md with filled placeholders])
+Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
+  description="Security Auditor persona DISCOVER",
+  prompt=[security-auditor.md with filled placeholders])
 ```
 
 Fill these placeholders in each template:
@@ -99,29 +109,21 @@ Fill these placeholders in each template:
 - `{ARTIFACT_CONTENT}` — design sections / requirements / project context
 - `{PROJECT_STRUCTURE}` — output of light project scan (file listing)
 
-**4. Kick off discovery:**
-```
-SendMessage(type="broadcast",
-  content="Phase: DISCOVER for {MODULE_NAME}. Read your relevant code areas, identify hidden requirements from your perspective. Write findings to your file, then message me with your summary.")
-```
-
-**5. Wait for 5 summary messages.** Each persona writes findings and reports:
+**3. Wait for all 5 subagents to complete.** Each writes findings to its file and returns a summary:
 ```
 "[Persona] DISCOVER complete for {MODULE_NAME}. [N] findings: [X] MISSING, [Y] PAINFUL. Key concern: [one sentence or 'none']."
 ```
 
-**6. Aggregate into lead.md:**
+**4. Aggregate into lead.md:**
 - Read each persona's findings file
 - Write aggregated summary to `.claude/rri-t/{module}/lead.md`
 - Create ONE consolidated checklist for the user
 
-**7. Present to user:**
+**5. Present to user:**
 - Show the consolidated checklist grouped by severity (FAIL → PAINFUL → MISSING)
 - User approves/rejects/modifies each item
-- Relay user decisions to personas via SendMessage
-- Personas update their findings files with user decisions
 
-**8. Keep team alive** for subsequent phases.
+**6. Update findings files** with user decisions (lead does this directly — no relay needed since subagents have exited).
 
 ## Phase: PLAN_REVIEW
 
@@ -131,28 +133,20 @@ SendMessage(type="broadcast",
 
 ### Step-by-step:
 
-**1. If team exists from DISCOVER phase, reuse it. If not (context was cleared), create a new team and have personas read their existing findings files.**
+**1. Spawn 5 persona subagents in parallel** (same as DISCOVER, but with `{PHASE}` set to "PLAN_REVIEW" and `{ARTIFACT_CONTENT}` containing the plan). Include instruction to read their existing findings file first if it exists (from DISCOVER phase).
 
-**2. Send plan review instructions:**
-```
-SendMessage(type="broadcast",
-  content="Phase: PLAN_REVIEW for {MODULE_NAME}. Review this implementation plan through your lens. For each finding, tag as PASS/FAIL/PAINFUL/MISSING. Write findings to your file, then message me with your summary.\n\nPlan:\n{PLAN_CONTENT}")
-```
+**2. Wait for all 5 subagents to complete.** Each reads previous findings, reviews the plan, updates their findings file, and returns a summary.
 
-**3. Wait for 5 summary messages.**
+**3. Aggregate into lead.md** — update the Plan Review section.
 
-**4. Aggregate into lead.md** — update the Plan Review section.
-
-**5. Present to user:**
+**4. Present to user:**
 - Show findings grouped by severity
 - FAIL items require user decision
 - PAINFUL items presented as tradeoffs
 - MISSING items presented as scope questions
 - User decides on each
 
-**6. Relay decisions to personas. Personas update files.**
-
-**7. Keep team alive** (or shut down if transitioning to execution in a new session).
+**5. Update findings files** with user decisions.
 
 ## Phase: POST_CODE_VERIFY
 
@@ -162,17 +156,11 @@ SendMessage(type="broadcast",
 
 ### Step-by-step:
 
-**1. Create team (or reuse). Personas read their existing findings files.**
+**1. Spawn 5 persona subagents in parallel** (same pattern, `{PHASE}` = "POST_CODE_VERIFY"). Include instruction to read their existing findings file first.
 
-**2. Send verification instructions:**
-```
-SendMessage(type="broadcast",
-  content="Phase: POST_CODE_VERIFY for {MODULE_NAME}. Read the implementation. Verify against your previous findings. Update statuses. Score your dimensions (0-100%). Message me with your summary.")
-```
+**2. Wait for all 5 subagents to complete.** Each reads previous findings, verifies implementation, updates their findings file, and returns dimension scores.
 
-**3. Wait for 5 summary messages.** Each includes dimension scores.
-
-**4. Generate coverage matrix:**
+**3. Generate coverage matrix:**
 
 | Dimension | Persona | Score |
 |-----------|---------|-------|
@@ -184,34 +172,22 @@ SendMessage(type="broadcast",
 | Infrastructure | DevOps | 95% |
 | Edge Cases | QA Destroyer | 72% |
 
-**5. Calculate release gate:**
+**4. Calculate release gate:**
 - GREEN: all dimensions >= 85%
 - YELLOW: any dimension 70-84%
 - RED: any dimension < 70%
 
-**6. Present to user** with coverage matrix and release gate recommendation.
-
-## Shutting Down the Team
-
-When all phases are complete or the user says "skip":
-```
-SendMessage(type="shutdown_request", recipient="end-user")
-SendMessage(type="shutdown_request", recipient="ba")
-SendMessage(type="shutdown_request", recipient="qa-destroyer")
-SendMessage(type="shutdown_request", recipient="devops")
-SendMessage(type="shutdown_request", recipient="security")
-TeamDelete
-```
-
-Final update to all findings files and lead.md.
+**5. Present to user** with coverage matrix and release gate recommendation.
 
 ## Context Resilience
 
+Persistence lives in the **findings files**, not in agent processes. Subagents are stateless — they read findings files at the start of each phase and write updates before exiting.
+
 | Situation | What happens |
 |-----------|-------------|
-| Session normal | Team uses in-memory context — fast |
-| Auto-compact | Personas re-read their findings file — recover |
-| Clear context / new session | Spawn new team, each persona reads their findings file |
+| Session normal | Subagents spawn, read files, do work, return results, exit |
+| Auto-compact | No impact — subagents are short-lived |
+| Clear context / new session | Spawn fresh subagents, they read existing findings files |
 | Different project | Plugin carries skill prompts, user-profile.md provides context |
 
 ## Escalation Format
@@ -238,4 +214,4 @@ When presenting findings to the user, translate to product language:
 
 ## User Override
 
-If the user says "skip the review" or "just proceed" at any point, shut down the team and move on. The user is always in control.
+If the user says "skip the review" or "just proceed" at any point, skip the review and move on. The user is always in control.

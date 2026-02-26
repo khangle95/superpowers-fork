@@ -14,6 +14,9 @@ if [ -d "$legacy_skills_dir" ]; then
     warning_message="\n\n<important-reminder>IN YOUR FIRST REPLY AFTER SEEING THIS MESSAGE YOU MUST TELL THE USER:⚠️ **WARNING:** Super Bear now uses Claude Code's skills system. Custom skills in ~/.config/superpowers/skills will not be read. Move custom skills to ~/.claude/skills instead. To make this message go away, remove ~/.config/superpowers/skills</important-reminder>"
 fi
 
+# Read user profile
+user_profile_content=$(cat "${PLUGIN_ROOT}/user-profile.md" 2>/dev/null || echo "")
+
 # Read using-superpowers content
 using_superpowers_content=$(cat "${PLUGIN_ROOT}/skills/using-superpowers/SKILL.md" 2>&1 || echo "Error reading using-superpowers skill")
 
@@ -30,9 +33,17 @@ escape_for_json() {
     printf '%s' "$s"
 }
 
+user_profile_escaped=$(escape_for_json "$user_profile_content")
 using_superpowers_escaped=$(escape_for_json "$using_superpowers_content")
 warning_escaped=$(escape_for_json "$warning_message")
-session_context="<EXTREMELY_IMPORTANT>\nYou have super-bear.\n\n**Below is the full content of your 'super-bear:using-superpowers' skill - your introduction to using skills. For all other skills, use the 'Skill' tool:**\n\n${using_superpowers_escaped}\n\n${warning_escaped}\n</EXTREMELY_IMPORTANT>"
+
+# Build session context with user profile injected first
+user_profile_section=""
+if [ -n "$user_profile_content" ]; then
+    user_profile_section="<USER_PROFILE>\n${user_profile_escaped}\n</USER_PROFILE>\n\n"
+fi
+
+session_context="${user_profile_section}<EXTREMELY_IMPORTANT>\nYou have super-bear.\n\n**Below is the full content of your 'super-bear:using-superpowers' skill - your introduction to using skills. For all other skills, use the 'Skill' tool:**\n\n${using_superpowers_escaped}\n\n${warning_escaped}\n</EXTREMELY_IMPORTANT>"
 
 # Output context injection as JSON.
 # Keep both shapes for compatibility:

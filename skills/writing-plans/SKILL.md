@@ -98,9 +98,7 @@ git commit -m "feat: add specific feature"
 
 After drafting the plan, invoke `super-bear:rri-t` with phase=PLAN_REVIEW. This is the critical quality gate — the last checkpoint before code gets written.
 
-The RRI-T team (5 personas: End User, BA, QA Destroyer, DevOps, Security Auditor) reviews the plan through their specialized lenses. Each persona tags findings as PASS / FAIL / PAINFUL / MISSING.
-
-If the team was already created during brainstorming (DISCOVER phase), they reuse context. If context was cleared, the skill spawns a new team and each persona reads their previous findings files to resume.
+The RRI-T skill spawns 5 persona subagents in parallel (End User, BA, QA Destroyer, DevOps, Security Auditor). Each reads their previous findings files (from DISCOVER phase if available), reviews the plan through their specialized lens, and tags findings as PASS / FAIL / PAINFUL / MISSING.
 
 The lead aggregates findings and presents to the user:
 - **FAIL** items require a user decision before proceeding
