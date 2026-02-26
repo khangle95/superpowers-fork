@@ -102,4 +102,5 @@ MIT License - see LICENSE file for details
 ## Credits
 
 - **Original project:** [Superpowers](https://github.com/obra/superpowers) by [Jesse Vincent](https://github.com/obra)
+- **RRI-T methodology:** Created by [Lam Nguyen](https://www.facebook.com/nclamvn)
 - If Superpowers has helped you, consider [sponsoring Jesse's work](https://github.com/sponsors/obra)
