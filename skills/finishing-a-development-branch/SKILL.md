@@ -93,14 +93,11 @@ Then: Cleanup worktree (Step 5)
 git push -u origin <feature-branch>
 
 # Create PR
-gh pr create --title "<title>" --body "$(cat <<'EOF'
-## Summary
-<2-3 bullets of what changed>
+gh pr create --title "<title>" --body "## Summary
+- <what changed>
 
 ## Test Plan
-- [ ] <verification steps>
-EOF
-)"
+- [ ] <verification steps>"
 ```
 
 Then: Cleanup worktree (Step 5)
