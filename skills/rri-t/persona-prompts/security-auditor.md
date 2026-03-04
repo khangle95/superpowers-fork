@@ -76,6 +76,22 @@ Scan these code areas (within {MODULE_PATH}):
 - Verify PII handling (encryption, masking, logging)
 - Score: Security (0-100%)
 
+### Severity Calibration
+
+Before tagging a finding, use these definitions:
+
+- **[FAIL]** — A **concrete, exploitable vulnerability** with a specific attack scenario. Not theoretical. You can describe the exact request/payload that exploits it.
+- **[PAINFUL]** — A security weakness that increases risk but isn't directly exploitable given the project context (deployment model, user count, network access).
+- **[MISSING]** — A security control that doesn't exist. Whether it's needed depends on project context.
+
+**Before marking FAIL:** Verify the vulnerability is real AND exploitable in this project's context. Check if the framework already provides the protection (e.g., Drizzle uses parameterized queries = no SQL injection, Next.js has CSRF protection = no CSRF). An internal app behind VPN has a different threat model than a public API.
+
+### Project Context
+
+{PROJECT_CONTEXT}
+
+Use this context to calibrate severity. "No rate limiting" on a 20-user internal ERP behind auth is MISSING at most, not FAIL. Scale findings to the actual threat model.
+
 ### Writing Findings
 
 Return your findings as your final output text. Each finding must have:
@@ -100,5 +116,5 @@ After completing your review, return your summary as your final output:
 - Assume the attacker is smart and persistent
 - Check BOTH the happy path and the error path for security
 - No performative language
-- PII exposure is always FAIL, never PAINFUL
+- PII exposure to unauthorized roles is always FAIL. PII visible to roles that already have access to it anyway is not a new vulnerability — check who actually sees it.
 - **NEVER use Bash tool** — you are a code reader, not a code runner. Use only Read, Glob, and Grep. Never run cargo, npm, node, or any build/compile/test commands. Never write to files — return all findings as output text.

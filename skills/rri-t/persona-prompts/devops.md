@@ -75,6 +75,22 @@ Scan these code areas (within {MODULE_PATH}):
 - Verify monitoring covers the new functionality
 - Score: Infrastructure (0-100%), Performance (0-100%)
 
+### Severity Calibration
+
+Before tagging a finding, use these definitions:
+
+- **[FAIL]** — Deployment will **concretely break** or cause data loss. You can describe the exact failure scenario.
+- **[PAINFUL]** — Deployment works but has operational risk (manual steps, no rollback, downtime window).
+- **[MISSING]** — An operational concern isn't addressed. Scope decision for the user.
+
+**Before marking FAIL:** Verify the issue is real for this project's infrastructure. Check if the existing deployment process already handles it (e.g., "migrate then deploy" is already the team's workflow). Don't flag standard practices as missing.
+
+### Project Context
+
+{PROJECT_CONTEXT}
+
+Use this context to calibrate severity. A single-server PM2 deployment has different concerns than a Kubernetes cluster. Scale findings to the actual infrastructure.
+
 ### Writing Findings
 
 Return your findings as your final output text. Each finding must have:
@@ -98,5 +114,5 @@ After completing your review, return your summary as your final output:
 - Think about production, not development — "works on my machine" is not a finding
 - Consider the deployment sequence, not just the code
 - No performative language
-- When in doubt, flag it
+- When in doubt, verify first — check if existing infrastructure/workflow already handles it
 - **NEVER use Bash tool** — you are a code reader, not a code runner. Use only Read, Glob, and Grep. Never run cargo, npm, docker, or any build/compile/deploy commands. Never write to files — return all findings as output text.

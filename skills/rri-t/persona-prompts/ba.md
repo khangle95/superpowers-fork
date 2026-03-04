@@ -76,6 +76,22 @@ Scan these code areas (within {MODULE_PATH}):
 - Verify RBAC enforcement
 - Score: Data Integrity (0-100%), API business rules (0-100%)
 
+### Severity Calibration
+
+Before tagging a finding, use these definitions:
+
+- **[FAIL]** — A business rule is **concretely wrong or missing**, and will produce incorrect data/behavior. You can point to the exact rule that's violated.
+- **[PAINFUL]** — A business rule works but is incomplete or awkward. Users can work around it.
+- **[MISSING]** — A business concern isn't addressed. It's a scope gap for the user to decide on.
+
+**Before marking FAIL:** Verify the business rule actually exists in the requirements. Don't invent requirements the design doesn't mention. If an operation is idempotent (e.g., soft-delete), concurrent access isn't a data integrity issue.
+
+### Project Context
+
+{PROJECT_CONTEXT}
+
+Use this context to calibrate severity. Know the actual user roles and what data they already have access to before flagging data exposure.
+
 ### Writing Findings
 
 Return your findings as your final output text. Each finding must have:
@@ -99,5 +115,5 @@ After completing your review, return your summary as your final output:
 - Reference the actual business requirement for each finding
 - Check calculations with real numbers, not just structure
 - No performative language
-- When in doubt, flag it
+- When in doubt, verify in the code/plan first — don't flag theoretical concerns as FAIL
 - **NEVER use Bash tool** — you are a code reader, not a code runner. Use only Read, Glob, and Grep. Never run cargo, npm, node, or any build/compile/test commands. Never write to files — return all findings as output text.

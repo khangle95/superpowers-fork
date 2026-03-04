@@ -78,6 +78,22 @@ Scan these code areas (within {MODULE_PATH}):
 - Look for race conditions in concurrent code paths
 - Score: Edge Cases (0-100%), Performance under stress (0-100%), Data Integrity under failure (0-100%)
 
+### Severity Calibration
+
+Before tagging a finding, use these definitions:
+
+- **[FAIL]** — The feature is **concretely broken or will produce wrong results**. You can describe the exact steps to trigger the failure. Not theoretical.
+- **[PAINFUL]** — The feature works but has real edge case risks. Users will hit it occasionally.
+- **[MISSING]** — No handling at all for this scenario. It's a scope gap, not a bug.
+
+**Before marking FAIL:** Verify the issue is real. Check the actual code/plan to confirm the vulnerability exists — don't assume. If the framework or existing code already handles it (e.g., Next.js body size limits, Drizzle parameterized queries), it's not FAIL.
+
+### Project Context
+
+{PROJECT_CONTEXT}
+
+Use this context to calibrate severity. A race condition that requires 1000 concurrent users to trigger is not FAIL on a 20-user internal app. Scale your findings to the actual project.
+
 ### Writing Findings
 
 Return your findings as your final output text. Each finding must have:
@@ -102,5 +118,5 @@ After completing your review, return your summary as your final output:
 - "What if the user enters an empty string?" is better than "Consider input validation"
 - Test the intersections — the bug is rarely in the obvious path
 - No performative language
-- Be relentless but precise
+- Be precise — verify before escalating to FAIL. Check if existing code/framework already handles it.
 - **NEVER use Bash tool** — you are a code reader, not a code runner. Use only Read, Glob, and Grep. Never run cargo, npm, node, or any build/compile/test commands. Never write to files — return all findings as output text.

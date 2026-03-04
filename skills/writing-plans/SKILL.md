@@ -186,16 +186,91 @@ git commit -m "feat: add specific feature"
 
 ## RRI-T Plan Review
 
-After drafting the plan, invoke `super-bear:rri-t` with phase=PLAN_REVIEW. This is the critical quality gate — the last checkpoint before code gets written.
+After drafting the plan, run PLAN_REVIEW as an **agent team**. This is the critical quality gate — the last checkpoint before code gets written.
 
-The RRI-T skill spawns 5 persona subagents in parallel (End User, BA, QA Destroyer, DevOps, Security Auditor). Each reads their previous findings files (from DISCOVER phase if available), reviews the plan through their specialized lens, and tags findings as PASS / FAIL / PAINFUL / MISSING.
+**Why agent team (not fire-and-forget)?** PLAN_REVIEW reviews a document, not code. Personas may flag issues that the codebase already handles. A Triage Analyst investigates the codebase and debates with personas to resolve false positives. This keeps the debate off your context window.
 
-The lead aggregates findings and presents to the user:
-- **FAIL** items require a user decision before proceeding
-- **PAINFUL** items presented as tradeoffs
-- **MISSING** items presented as scope questions
+### Step-by-step:
 
-**After plan review completes and user has decided on all FAIL items, run the Independent Coverage Agent (see below). Only proceed to Phase Gate after coverage agent returns PASS.**
+**1. Create agent team** named `rri-t-{uid}` (reuse UID from DISCOVER if exists).
+
+**2. Create tasks** in the team task list:
+- One task per persona: "Review plan as [Persona]"
+- One task for Triage Analyst: "Investigate and resolve FAIL findings" (blocked by all 5 persona tasks)
+
+**3. Spawn 6 team members:**
+
+5 personas — use templates from `skills/rri-t/persona-prompts/`. Append these instructions AFTER the template content:
+```
+--- PLAN_REVIEW INSTRUCTIONS (appended by orchestrator) ---
+- You have NO codebase access. Review the plan document only.
+- Find problems, not solutions. Describe what's wrong and why.
+  A Triage Analyst with codebase access will handle fixes.
+- A Triage Analyst may challenge your FAIL findings with codebase
+  evidence. Be ready to defend with reasoning from the plan/design.
+- After review, create one task per FAIL finding in the team task list
+  (tagged with your persona name), then mark your review task complete.
+- Previous findings (if any): {PREVIOUS_FINDINGS}
+```
+
+Placeholders for PLAN_REVIEW personas:
+- `{MODULE_NAME}` — feature name
+- `{PHASE}` — "PLAN_REVIEW"
+- `{ARTIFACT_CONTENT}` — the full plan + Feature Summary from design doc
+- `{PROJECT_CONTEXT}` — project context (see `skills/rri-t/SKILL.md` Prerequisites)
+- **No `{MODULE_PATH}` or `{PROJECT_STRUCTURE}`** — personas don't read code
+
+```
+Agent(subagent_type="general-purpose", model="sonnet",
+  team_name="rri-t-{uid}", name="end-user",
+  prompt=[end-user.md + PLAN_REVIEW instructions + placeholders])
+```
+Repeat for ba, qa-destroyer, devops, security-auditor.
+
+1 Triage Analyst (full codebase access):
+```
+Agent(subagent_type="general-purpose", model="sonnet",
+  team_name="rri-t-{uid}", name="triage-analyst",
+  prompt=[skills/rri-t/persona-prompts/triage-analyst.md with filled placeholders])
+```
+
+**4. Personas review the plan,** create FAIL finding tasks, mark their review task complete, go idle.
+
+**5. Triage Analyst picks up FAIL findings** (unblocked after personas complete):
+- Investigates the codebase (Glob, Grep, Read)
+- For each finding: FIX NEEDED / NO FIX NEEDED / DOWNGRADE
+- If NO FIX or DOWNGRADE: messages the **original persona** with evidence
+- Persona responds — agrees or defends
+- **Max 3 rounds per finding**
+
+**6. Triage Analyst classifies and resolves:**
+- **Technical fix** (wrong types, missing error handling, framework misuse) → auto-applies to plan. No user approval.
+- **Requirement/scope decision** (feature choices, UX, business rules) → **NEVER assume. Escalate to user.**
+- **Unresolved after 3 rounds** → escalate with both arguments.
+
+**7. Triage Analyst writes investigation file** to `investigations/{date}-{topic}-plan-review-{uid}.md` and notifies lead.
+
+**8. Lead reads investigation file,** presents ONLY items needing user decision:
+- Requirement/scope questions
+- Unresolved debates (both arguments shown)
+- PAINFUL items as tradeoffs
+- MISSING items as scope questions
+
+**9. Lead updates investigation file** with user decisions. Shuts down team.
+
+### Auto-Apply vs Ask User
+
+| Finding type | Action | Example |
+|-------------|--------|---------|
+| Technical bug in plan | Auto-fix, no approval | Wrong transaction type → fix it |
+| Missing error handling | Auto-fix, no approval | No version check → add it |
+| Feature scope question | **ASK USER** | "Undo toast or immediate commit?" |
+| Business rule ambiguity | **ASK USER** | "Should deleted items keep history?" |
+| Unresolved debate | **ASK USER** with both arguments | Triage says X, persona says Y |
+
+**When in doubt: ASK. Never assume the user's requirements.**
+
+**After plan review resolves all items, run the Independent Coverage Agent (see below). Only proceed to Phase Gate after coverage agent returns PASS.**
 
 ## Independent Coverage Agent
 

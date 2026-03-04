@@ -20,6 +20,26 @@ RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-c
   - DISCOVER: project code + requirements
   - PLAN_REVIEW: implementation plan
   - POST_CODE_VERIFY: implemented code
+- `{PROJECT_CONTEXT}` — **REQUIRED for all phases.** Gather before spawning:
+  ```
+  - User count: [e.g., ~20 internal users]
+  - Deployment model: [e.g., single VPS with PM2, internal network]
+  - Public vs internal: [e.g., internal ERP behind auth]
+  - Auth model: [e.g., session-based, role-based with 5 roles]
+  - Existing infrastructure: [e.g., Next.js 14, Drizzle ORM, PostgreSQL]
+  - Threat model: [e.g., all users are trusted employees, no public-facing API]
+  ```
+  This prevents personas from flagging issues that don't apply to the project.
+
+## Phase Structures
+
+Each phase uses a different agent structure:
+
+| Phase | Structure | Personas get codebase? | Triage Analyst? |
+|-------|-----------|----------------------|-----------------|
+| DISCOVER | Fire-and-forget subagents | Yes | No |
+| PLAN_REVIEW | Agent team with debate | No (plan only) | Yes |
+| POST_CODE_VERIFY | Fire-and-forget subagents | Yes | No |
 
 ## Persona Structure
 
@@ -31,13 +51,14 @@ RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-c
 | **DevOps** | Deploy, scaling, monitoring, backup, migration | Dockerfile, CI/CD, deploy scripts, migrations |
 | **Security Auditor** | Auth, injection, data exposure, rate limiting | Auth middleware, API routes, sanitization, RBAC |
 
-Each persona is a **subagent** (Task tool) that runs, returns findings as output, and exits. Persistence lives in the investigation files written by the lead.
+Each persona is spawned differently depending on phase (see Phase Structures above). In DISCOVER/POST_CODE_VERIFY they are fire-and-forget subagents. In PLAN_REVIEW they are agent team members that persist for debate with the Triage Analyst.
 
 ## Resource Safety
 
-Personas use `model: "sonnet"` — they read code and write structured findings, which does not require Opus-level reasoning. This reduces memory usage per agent by ~50%.
+All agents use `model: "sonnet"` — they read code/plans and write structured findings, which does not require Opus-level reasoning.
 
-All 5 subagents run in parallel via `run_in_background: true`. Each returns findings as output (no file writes, no shared state conflicts). If the system is resource-constrained, the lead can spawn in batches of 2-3 instead of all 5.
+DISCOVER/POST_CODE_VERIFY: 5 subagents run in parallel via `run_in_background: true`.
+PLAN_REVIEW: 6 team members (5 personas + Triage Analyst). Personas go idle after findings; Triage Analyst does the heavy work.
 
 ## Investigation Files
 
@@ -87,82 +108,13 @@ investigations/{date}-{topic}-{phase}-{uid}.md
 
 Use the consolidated investigation file format above. The old per-persona templates (`findings-template.md`, `lead-template.md`) are no longer used.
 
-## Phase: DISCOVER
+## Phase-Specific Orchestration
 
-**When:** During brainstorming, after user Q&A and before proposing approaches.
+**DISCOVER** and **PLAN_REVIEW** orchestration lives in the calling skills:
+- DISCOVER → see `skills/brainstorming/SKILL.md` (## RRI-T Discovery Phase)
+- PLAN_REVIEW → see `skills/writing-plans/SKILL.md` (## RRI-T Plan Review)
 
-**Purpose:** 5 personas identify hidden requirements from their perspectives.
-
-### Step-by-step:
-
-**1. Generate investigation UID** (4-char random hex, e.g., `a3f1`). This UID ties all phases of this task together.
-
-**2. Spawn 5 persona subagents in parallel** (read each template from `skills/rri-t/persona-prompts/`, fill placeholders, spawn):
-```
-Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
-  description="End User persona DISCOVER",
-  prompt=[end-user.md with filled placeholders])
-Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
-  description="BA persona DISCOVER",
-  prompt=[ba.md with filled placeholders])
-Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
-  description="QA Destroyer persona DISCOVER",
-  prompt=[qa-destroyer.md with filled placeholders])
-Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
-  description="DevOps persona DISCOVER",
-  prompt=[devops.md with filled placeholders])
-Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
-  description="Security Auditor persona DISCOVER",
-  prompt=[security-auditor.md with filled placeholders])
-```
-
-Fill these placeholders in each template:
-- `{MODULE_NAME}` — detected module name
-- `{MODULE_PATH}` — path to module code
-- `{PHASE}` — "DISCOVER"
-- `{ARTIFACT_CONTENT}` — design sections / requirements / project context
-- `{PROJECT_STRUCTURE}` — output of light project scan (file listing)
-
-**Note:** Subagents return their findings as output text. They do NOT write to any files.
-
-**3. Wait for all 5 subagents to complete.** Each returns findings as output text:
-```
-"[Persona] DISCOVER complete for {MODULE_NAME}. [N] findings: [X] MISSING, [Y] PAINFUL. Key concern: [one sentence or 'none']."
-```
-
-**4. Write consolidated investigation file:**
-- Read each persona's returned output
-- Write ONE consolidated investigation file to `investigations/{date}-{topic}-discover-{uid}.md`
-- Create consolidated checklist for the user
-
-**5. Present to user:**
-- Show the consolidated checklist grouped by severity (FAIL → PAINFUL → MISSING)
-- User approves/rejects/modifies each item
-
-**6. Update the consolidated investigation file's** ## Consolidated Decisions section with user decisions.
-
-## Phase: PLAN_REVIEW
-
-**When:** During writing-plans, after the implementation plan is drafted. Replaces design-cross-check.
-
-**Purpose:** 5 personas review the plan through their specialized lens.
-
-### Step-by-step:
-
-**1. Spawn 5 persona subagents in parallel** (same as DISCOVER, but with `{PHASE}` set to "PLAN_REVIEW"). Include instruction to read the previous DISCOVER investigation file if it exists: `Glob investigations/*-{topic}-discover-{uid}.md`. The `{ARTIFACT_CONTENT}` placeholder now includes BOTH the plan AND the Feature Summary table from the design doc. Personas use the Feature Summary as context for better domain review — they do NOT do coverage counting.
-
-**2. Wait for all 5 subagents to complete.** Each returns findings as output text.
-
-**3. Write ONE consolidated investigation file** to `investigations/{date}-{topic}-plan-review-{uid}.md`.
-
-**4. Present to user:**
-- Show findings grouped by severity
-- FAIL items require user decision
-- PAINFUL items presented as tradeoffs
-- MISSING items presented as scope questions
-- User decides on each
-
-**5. Update the consolidated investigation file's** ## Consolidated Decisions section with user decisions.
+POST_CODE_VERIFY is invoked standalone, so its orchestration stays here.
 
 ## Phase: POST_CODE_VERIFY
 
@@ -172,7 +124,7 @@ Fill these placeholders in each template:
 
 ### Step-by-step:
 
-**1. Spawn 5 persona subagents in parallel** (same pattern, `{PHASE}` = "POST_CODE_VERIFY"). Include instruction to read previous investigation files for context: `Glob investigations/*-{topic}-*-{uid}.md`.
+**1. Spawn 5 persona subagents in parallel** — fire-and-forget, WITH codebase access (same as DISCOVER). Set `{PHASE}` = "POST_CODE_VERIFY". Append instruction to read previous investigation files: `Glob investigations/*-{topic}-*-{uid}.md`.
 
 **2. Wait for all 5 subagents to complete.** Each returns findings and dimension scores as output text.
 
