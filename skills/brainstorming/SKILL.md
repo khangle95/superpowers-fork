@@ -138,10 +138,10 @@ You receive the consolidated findings and present them to the user as a checklis
 
 After the user responds:
 - Use approved findings to inform approach proposals (step 4)
-- Update findings files with user decisions
+- Update the consolidated investigation file with user decisions
 - If no findings, proceed directly to proposing approaches
 
-**Note:** Findings persist in `.claude/rri-t/` files. The PLAN_REVIEW phase (invoked by writing-plans) spawns fresh subagents that read these files to resume context.
+**Note:** Findings are written to `investigations/{date}-{topic}-discover-{uid}.md` as a single consolidated file (all 5 personas in one file). The lead writes this file from subagent output — subagents no longer need file write access. The PLAN_REVIEW phase reads this file for context continuity.
 
 ## After the Design
 
