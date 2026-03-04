@@ -7,7 +7,7 @@ description: "Use for structured quality review with 5 persona subagents (End Us
 
 ## Overview
 
-RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-cross-check with 5 specialized persona subagents that review work through their domain lens. Each persona reads only code relevant to their area, writes findings to persistent files, and returns a summary to the lead.
+RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-cross-check with 5 specialized persona subagents that review work through their domain lens. Each persona reads only code relevant to their area and returns findings to the lead, who writes a consolidated investigation file.
 
 **Announce at start:** "I'm using the RRI-T skill to run a [phase] review with 5 persona subagents."
 
@@ -31,13 +31,13 @@ RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-c
 | **DevOps** | Deploy, scaling, monitoring, backup, migration | Dockerfile, CI/CD, deploy scripts, migrations |
 | **Security Auditor** | Auth, injection, data exposure, rate limiting | Auth middleware, API routes, sanitization, RBAC |
 
-Each persona is a **subagent** (Task tool) that runs, writes findings, returns a summary, and exits. Persistence lives in the findings files, not in agent processes.
+Each persona is a **subagent** (Task tool) that runs, returns findings as output, and exits. Persistence lives in the investigation files written by the lead.
 
 ## Resource Safety
 
 Personas use `model: "sonnet"` — they read code and write structured findings, which does not require Opus-level reasoning. This reduces memory usage per agent by ~50%.
 
-All 5 subagents run in parallel via `run_in_background: true`. Each writes to its own findings file (no shared state conflicts). If the system is resource-constrained, the lead can spawn in batches of 2-3 instead of all 5.
+All 5 subagents run in parallel via `run_in_background: true`. Each returns findings as output (no file writes, no shared state conflicts). If the system is resource-constrained, the lead can spawn in batches of 2-3 instead of all 5.
 
 ## Investigation Files
 
@@ -95,7 +95,7 @@ Use the consolidated investigation file format above. The old per-persona templa
 
 ### Step-by-step:
 
-**1. Detect module and create findings directory (if needed).**
+**1. Generate investigation UID** (4-char random hex, e.g., `a3f1`). This UID ties all phases of this task together.
 
 **2. Spawn 5 persona subagents in parallel** (read each template from `skills/rri-t/persona-prompts/`, fill placeholders, spawn):
 ```
@@ -119,26 +119,28 @@ Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
 Fill these placeholders in each template:
 - `{MODULE_NAME}` — detected module name
 - `{MODULE_PATH}` — path to module code
-- `{FINDINGS_DIR}` — path to `.claude/rri-t/{module}/`
+- `{FINDINGS_DIR}` — NOT USED (subagents return output instead of writing files)
 - `{PHASE}` — "DISCOVER"
 - `{ARTIFACT_CONTENT}` — design sections / requirements / project context
 - `{PROJECT_STRUCTURE}` — output of light project scan (file listing)
 
-**3. Wait for all 5 subagents to complete.** Each writes findings to its file and returns a summary:
+**Note:** Subagents return their findings as output text. They do NOT write to any files.
+
+**3. Wait for all 5 subagents to complete.** Each returns findings as output text:
 ```
 "[Persona] DISCOVER complete for {MODULE_NAME}. [N] findings: [X] MISSING, [Y] PAINFUL. Key concern: [one sentence or 'none']."
 ```
 
-**4. Aggregate into lead.md:**
-- Read each persona's findings file
-- Write aggregated summary to `.claude/rri-t/{module}/lead.md`
-- Create ONE consolidated checklist for the user
+**4. Write consolidated investigation file:**
+- Read each persona's returned output
+- Write ONE consolidated investigation file to `investigations/{date}-{topic}-discover-{uid}.md`
+- Create consolidated checklist for the user
 
 **5. Present to user:**
 - Show the consolidated checklist grouped by severity (FAIL → PAINFUL → MISSING)
 - User approves/rejects/modifies each item
 
-**6. Update findings files** with user decisions (lead does this directly — no relay needed since subagents have exited).
+**6. Update the consolidated investigation file's** ## Consolidated Decisions section with user decisions.
 
 ## Phase: PLAN_REVIEW
 
@@ -148,11 +150,11 @@ Fill these placeholders in each template:
 
 ### Step-by-step:
 
-**1. Spawn 5 persona subagents in parallel** (same as DISCOVER, but with `{PHASE}` set to "PLAN_REVIEW" and `{ARTIFACT_CONTENT}` containing the plan). Include instruction to read their existing findings file first if it exists (from DISCOVER phase).
+**1. Spawn 5 persona subagents in parallel** (same as DISCOVER, but with `{PHASE}` set to "PLAN_REVIEW"). Include instruction to read the previous DISCOVER investigation file if it exists: `Glob investigations/*-{topic}-discover-{uid}.md`. The `{ARTIFACT_CONTENT}` placeholder now includes BOTH the plan AND the Feature Summary table from the design doc. Personas use the Feature Summary as context for better domain review — they do NOT do coverage counting.
 
-**2. Wait for all 5 subagents to complete.** Each reads previous findings, reviews the plan, updates their findings file, and returns a summary.
+**2. Wait for all 5 subagents to complete.** Each returns findings as output text.
 
-**3. Aggregate into lead.md** — update the Plan Review section.
+**3. Write ONE consolidated investigation file** to `investigations/{date}-{topic}-plan-review-{uid}.md`.
 
 **4. Present to user:**
 - Show findings grouped by severity
@@ -161,7 +163,7 @@ Fill these placeholders in each template:
 - MISSING items presented as scope questions
 - User decides on each
 
-**5. Update findings files** with user decisions.
+**5. Update the consolidated investigation file's** ## Consolidated Decisions section with user decisions.
 
 ## Phase: POST_CODE_VERIFY
 
@@ -171,9 +173,11 @@ Fill these placeholders in each template:
 
 ### Step-by-step:
 
-**1. Spawn 5 persona subagents in parallel** (same pattern, `{PHASE}` = "POST_CODE_VERIFY"). Include instruction to read their existing findings file first.
+**1. Spawn 5 persona subagents in parallel** (same pattern, `{PHASE}` = "POST_CODE_VERIFY"). Include instruction to read previous investigation files for context: `Glob investigations/*-{topic}-*-{uid}.md`.
 
-**2. Wait for all 5 subagents to complete.** Each reads previous findings, verifies implementation, updates their findings file, and returns dimension scores.
+**2. Wait for all 5 subagents to complete.** Each returns findings and dimension scores as output text.
+
+**2b. Write ONE consolidated investigation file** to `investigations/{date}-{topic}-post-verify-{uid}.md`.
 
 **3. Generate coverage matrix:**
 
@@ -196,13 +200,13 @@ Fill these placeholders in each template:
 
 ## Context Resilience
 
-Persistence lives in the **findings files**, not in agent processes. Subagents are stateless — they read findings files at the start of each phase and write updates before exiting.
+Persistence lives in the **investigation files** in `investigations/`, not in agent processes. Subagents are stateless — they return findings as output, and the lead writes consolidated investigation files.
 
 | Situation | What happens |
 |-----------|-------------|
-| Session normal | Subagents spawn, read files, do work, return results, exit |
+| Session normal | Subagents spawn, read code, return results, lead writes investigation file |
 | Auto-compact | No impact — subagents are short-lived |
-| Clear context / new session | Spawn fresh subagents, they read existing findings files |
+| Clear context / new session | Spawn fresh subagents, they read existing investigation files via Glob |
 | Different project | Plugin carries skill prompts, user-profile.md provides context |
 
 ## Escalation Format
