@@ -156,7 +156,27 @@ The lead aggregates findings and presents to the user:
 - **PAINFUL** items presented as tradeoffs
 - **MISSING** items presented as scope questions
 
-**Only proceed to Phase Gate after plan review completes and user has decided on all FAIL items.**
+**After plan review completes and user has decided on all FAIL items, run the Independent Coverage Agent (see below). Only proceed to Phase Gate after coverage agent returns PASS.**
+
+## Independent Coverage Agent
+
+After PLAN_REVIEW completes and user has decided on findings, spawn an independent coverage agent to verify structural integrity. This is the last gate before committing the plan.
+
+**What to spawn:** An Explore subagent (lightweight, read-only) with this task:
+
+> Read the Feature Summary table from [design doc path] and the Coverage section + task headers from [plan doc path]. Verify:
+> 1. Every Feature Summary item has an entry in Coverage (Planned or Deferred)
+> 2. Every "Planned" entry references task numbers that exist as ### Task N headers in the plan
+> 3. Total counts (planned + deferred) match the Feature Summary total
+> 4. Zero unaccounted items
+>
+> Return: PASS with summary, or FAIL with specific gaps.
+
+**If PASS:** Proceed to commit plan and phase gate.
+
+**If FAIL:** Plan the missing features (append tasks to existing plan), update Coverage section, re-run coverage agent. Max 2 loops before flagging to user.
+
+**Why this exists:** The coverage agent is a DIFFERENT agent from the one that wrote the plan. This provides independent verification — the agent that might drop features is not the one checking for dropped features.
 
 ## Phase Gate — Execution Handoff
 
