@@ -127,7 +127,7 @@ digraph brainstorming {
 
 After user Q&A (step 2), invoke `super-bear:rri-t` with phase=DISCOVER. This happens **before** proposing approaches so that discovery findings inform the design, not retroactively patch it.
 
-The RRI-T skill spawns 5 persona subagents in parallel (End User, BA, QA Destroyer, DevOps, Security Auditor). Each reads the relevant code areas, writes findings to persistent files, and returns a summary.
+The RRI-T skill spawns 5 persona subagents in parallel (End User, BA, QA Destroyer, DevOps, Security Auditor). Each reads the relevant code areas and returns findings to the lead, who writes a consolidated investigation file.
 
 You receive the consolidated findings and present them to the user as a checklist:
 

@@ -119,7 +119,6 @@ Task(subagent_type="general-purpose", model="sonnet", run_in_background=true,
 Fill these placeholders in each template:
 - `{MODULE_NAME}` — detected module name
 - `{MODULE_PATH}` — path to module code
-- `{FINDINGS_DIR}` — NOT USED (subagents return output instead of writing files)
 - `{PHASE}` — "DISCOVER"
 - `{ARTIFACT_CONTENT}` — design sections / requirements / project context
 - `{PROJECT_STRUCTURE}` — output of light project scan (file listing)
@@ -177,9 +176,9 @@ Fill these placeholders in each template:
 
 **2. Wait for all 5 subagents to complete.** Each returns findings and dimension scores as output text.
 
-**2b. Write ONE consolidated investigation file** to `investigations/{date}-{topic}-post-verify-{uid}.md`.
+**3. Write ONE consolidated investigation file** to `investigations/{date}-{topic}-post-verify-{uid}.md`.
 
-**3. Generate coverage matrix:**
+**4. Generate coverage matrix:**
 
 | Dimension | Persona | Score |
 |-----------|---------|-------|
@@ -191,12 +190,12 @@ Fill these placeholders in each template:
 | Infrastructure | DevOps | 95% |
 | Edge Cases | QA Destroyer | 72% |
 
-**4. Calculate release gate:**
+**5. Calculate release gate:**
 - GREEN: all dimensions >= 85%
 - YELLOW: any dimension 70-84%
 - RED: any dimension < 70%
 
-**5. Present to user** with coverage matrix and release gate recommendation.
+**6. Present to user** with coverage matrix and release gate recommendation.
 
 ## Context Resilience
 
