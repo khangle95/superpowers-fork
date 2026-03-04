@@ -39,38 +39,53 @@ Personas use `model: "sonnet"` — they read code and write structured findings,
 
 All 5 subagents run in parallel via `run_in_background: true`. Each writes to its own findings file (no shared state conflicts). If the system is resource-constrained, the lead can spawn in batches of 2-3 instead of all 5.
 
-## Module Detection and Findings Directory
+## Investigation Files
 
-**First-time setup (no `.claude/rri-t/` exists):**
-1. Scan project structure (file listing only — light scan)
-2. Propose module map to user for confirmation
-3. Create `_project.md` with approved map
+RRI-T investigations are written to `investigations/` at the project root as consolidated files (all 5 personas in one file).
 
-**Working on a specific module:**
-1. Detect module from conversation context (e.g., "build Order Management for CRM" → module=crm, sub-module=order)
-2. If `.claude/rri-t/{module}/` doesn't exist → create structure, notify user
-3. If it exists → read `lead.md` to resume from current state
-
-**Directory structure created lazily:**
+**File naming convention:**
 ```
-.claude/rri-t/
-├── _project.md                    ← Top-level module index
-├── {module}/
-│   ├── lead.md                    ← Module overview + aggregated findings
-│   ├── end-user.md                ← End User persona findings
-│   ├── ba.md                      ← BA persona findings
-│   ├── qa.md                      ← QA Destroyer persona findings
-│   ├── devops.md                  ← DevOps persona findings
-│   ├── security.md                ← Security Auditor persona findings
-│   └── {sub-module}/              ← Nested, same pattern repeats
-│       ├── lead.md
-│       ├── end-user.md
-│       └── ...
+investigations/{date}-{topic}-{phase}-{uid}.md
 ```
 
-Use templates from this skill's directory:
-- `findings-template.md` — for persona findings files
-- `lead-template.md` — for lead.md summary files
+- `{date}` — YYYY-MM-DD
+- `{topic}` — descriptive slug (e.g., crm-order-management, invoice-export)
+- `{phase}` — `discover` | `plan-review` | `post-verify`
+- `{uid}` — 4-character random hex, generated once per task, reused across phases
+
+**Rules:**
+- One RRI-T audit = one new file. Always create, never append.
+- 5 subagents run in parallel and **return findings as output** to the lead
+- Lead writes ONE consolidated file (not 6 separate files)
+- Subagents do NOT need file write access
+- The `{uid}` ties phases of the same task together
+- Cross-phase reading: `Glob investigations/*-{topic}-*-{uid}.md`
+
+**Consolidated file format:**
+```markdown
+# Investigation: [Title]
+> Date: YYYY-MM-DD | Topic: [topic] | Phase: [phase] | UID: [uid]
+
+## End User Findings
+- [MISSING/PAINFUL] Description...
+
+## BA Findings
+- [MISSING/PAINFUL] Description...
+
+## QA Destroyer Findings
+- [MISSING/PAINFUL] Description...
+
+## DevOps Findings
+- [MISSING/PAINFUL] Description...
+
+## Security Findings
+- [MISSING/PAINFUL] Description...
+
+## Consolidated Decisions
+- [Decisions made by user after reviewing findings]
+```
+
+Use the consolidated investigation file format above. The old per-persona templates (`findings-template.md`, `lead-template.md`) are no longer used.
 
 ## Phase: DISCOVER
 
