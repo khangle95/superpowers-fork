@@ -1,29 +1,23 @@
-# {MODULE_NAME} — {PERSONA} Findings
+# Investigation: {TITLE}
 
-## Module Context
-- Parent: {PARENT_MODULE}
-- Related: {RELATED_MODULES}
-- Last updated: {DATE}
+> Date: {DATE} | Topic: {TOPIC} | Phase: {PHASE} | UID: {UID}
 
-## Discovery
-<!-- Populated during DISCOVER phase -->
+## End User Findings
+<!-- Findings from End User persona -->
 
-## Plan Review
-<!-- Populated during PLAN_REVIEW phase -->
+## BA Findings
+<!-- Findings from BA persona -->
 
-## Post-code Verification
-<!-- Populated during POST_CODE_VERIFY phase -->
+## QA Destroyer Findings
+<!-- Findings from QA Destroyer persona -->
 
-<!--
-Finding format per entry:
-- [TAG] Description — code reference (file:line)
-  - Resolution: [pending | approved by user | rejected by user | resolved (date)]
+## DevOps Findings
+<!-- Findings from DevOps persona -->
 
-Tags: PASS, FAIL, PAINFUL, MISSING
+## Security Findings
+<!-- Findings from Security Auditor persona -->
 
-Example:
-- [MISSING] No diacritic-insensitive search — search.ts:45
-  - Resolution: approved by user — added to plan Task 4
-- [FAIL] VND displays with comma separator instead of dot — currency.ts:12
-  - Resolution: resolved 2026-02-27
+## Consolidated Decisions
+<!-- User decisions on findings. Format:
+- [Finding reference]: [approved | rejected | deferred] — [reason/notes]
 -->
