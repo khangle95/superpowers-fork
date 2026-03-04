@@ -94,6 +94,45 @@ If the design doc references a previous design or was produced by a sub-feature/
 3. Include them in the Coverage section as: `Deferred — [original reason] (carried from [previous plan])` or `Dropped — [reason]`
 4. The Coverage section must be self-contained — the latest plan always has the full picture
 
+## Task Ordering
+
+Order tasks bottom-up:
+1. **Data & types first** — schema, interfaces, configs, environment setup
+2. **Business logic & auth second** — services, middleware, validation, permission checks
+3. **Wiring third** — API routes, event handlers, external contracts, skill references
+4. **User-facing last** — UI components, CLI output, formatting, templates
+5. **Tests & docs at the end** — integration tests, documentation, cleanup
+
+Security/auth goes in step 2, not last.
+If task B imports/uses something task A creates → A before B.
+If unsure, put it earlier rather than later.
+
+### Dependency Annotations
+
+Mark each task:
+- **(Independent)** — doesn't need any same-layer task's output, safe to run in parallel later
+- **(Depends on: Task N)** — needs a specific earlier task done first
+
+Example: `### Task 5: Permission rules (Depends on: Task 4)`
+
+These annotations enable future parallel execution. Sequential today.
+
+### Layer Gates
+
+After finishing all tasks in a layer, add a verification step:
+
+```markdown
+### Layer Gate: [Layer] Complete
+Run: [type check or test command]
+If failing: Fix before proceeding.
+```
+
+Not every layer needs a gate. Use judgment:
+- After data & types: Almost always (everything depends on these)
+- After business logic: If complex logic or auth is involved
+- After wiring: If API contracts matter
+- After user-facing: No gate needed (tests & docs IS the gate)
+
 ## Task Structure
 
 ````markdown

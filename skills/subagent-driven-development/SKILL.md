@@ -76,7 +76,12 @@ digraph process {
     "Implementer subagent fixes quality issues" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="re-review"];
     "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
+    "More tasks remain?" -> "Next item is Layer Gate?" [label="yes"];
+    "Next item is Layer Gate?" -> "Run gate verification command" [label="yes"];
+    "Run gate verification command" -> "Gate passes?" [shape=diamond];
+    "Gate passes?" -> "More tasks remain?" [label="yes"];
+    "Gate passes?" -> "STOP — report failure to user" [label="no"];
+    "Next item is Layer Gate?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="no — regular task"];
     "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
     "Dispatch final code reviewer subagent for entire implementation" -> "Use super-bear:finishing-a-development-branch";
 }
@@ -196,6 +201,16 @@ Done!
 - Review loops add iterations
 - But catches issues early (cheaper than debugging later)
 
+## Layer Gates
+
+Plans may contain `### Layer Gate` steps between groups of tasks. When you encounter one:
+
+1. **Run the verification command** specified in the gate (e.g., `tsc --noEmit`, `pnpm test`)
+2. **If it passes:** Continue to next task
+3. **If it fails:** STOP. Do not proceed. Report the failure to the user.
+
+Layer gates are not tasks — don't dispatch a subagent for them. Run the command directly.
+
 ## Red Flags
 
 **Never:**
@@ -211,6 +226,8 @@ Done!
 - Let implementer self-review replace actual review (both are needed)
 - **Start code quality review before spec compliance is ✅** (wrong order)
 - Move to next task while either review has open issues
+- Skip layer gates (if the plan has one, run it)
+- Proceed past a failing layer gate
 
 **If subagent asks questions:**
 - Answer clearly and completely
