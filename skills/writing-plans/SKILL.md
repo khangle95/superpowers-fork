@@ -17,6 +17,10 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
 
+<HARD-GATE>
+The plan MUST have a ## Coverage section with 0 unaccounted items before proceeding to the phase gate. The independent coverage agent must return PASS. Do NOT present the phase gate until coverage is verified.
+</HARD-GATE>
+
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**
@@ -36,6 +40,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 > **For Claude:** REQUIRED SUB-SKILL: Use super-bear:executing-plans to implement this plan task-by-task.
 
 **Goal:** [One sentence describing what this builds]
+**Design:** [link to docs/plans/YYYY-MM-DD-<topic>-design.md]
+**Coverage:** [N planned, N deferred, 0 unaccounted]
 
 **Architecture:** [2-3 sentences about approach]
 
@@ -43,6 +49,50 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 ---
 ```
+
+## Feature Summary — Read First
+
+Before writing any tasks, read the design doc's **## Feature Summary** section. This is a compact table (10-20 lines) listing all features the design covers. Use it as your planning checklist.
+
+**Process:**
+1. Read the Feature Summary table from the design doc (use Explore subagent for the doc, but the Feature Summary is small enough to keep in main context)
+2. Plan tasks for each feature in the summary
+3. After all tasks are written, write the Coverage section (see below)
+
+For large designs (500+ lines): load one design section at a time while keeping the Feature Summary table in context throughout. This prevents context exhaustion while ensuring no features are missed.
+
+## Coverage Section — Write Last
+
+After all tasks are written, add a **## Coverage** section at the end of the plan. The Coverage section includes a self-describing instruction so any agent reading the plan knows what it is:
+
+~~~markdown
+## Coverage
+> **Verification:** An independent coverage agent checks this table against the Feature Summary. Every item must be Planned or Deferred. 0 unaccounted required.
+
+(Source: [design doc filename], Feature Summary)
+
+| F# | Feature | Status | Tasks |
+|----|---------|--------|-------|
+| F1 | [name] | Planned | Task 1-3 |
+| F2 | [name] | Deferred — [reason] | — |
+
+**N planned, N deferred, 0 unaccounted**
+~~~
+
+**Rules:**
+- The `> **Verification:**` instruction line makes the artifact self-describing — any agent reading the plan knows the Coverage section is verified by an independent agent
+- Every Feature Summary item MUST have an entry (Planned or Deferred)
+- Zero unaccounted items required
+- Deferred items must have a reason
+- If this is a V2+ plan, include carried-forward deferrals from the previous plan's Coverage section
+
+## Deferral Carry-Forward (V2+)
+
+If the design doc references a previous design or was produced by a sub-feature/redesign triage:
+1. Read the previous plan's ## Coverage section (use Explore subagent)
+2. Find deferred items that are NOT in the current design's Feature Summary
+3. Include them in the Coverage section as: `Deferred — [original reason] (carried from [previous plan])` or `Dropped — [reason]`
+4. The Coverage section must be self-contained — the latest plan always has the full picture
 
 ## Task Structure
 
@@ -93,6 +143,7 @@ git commit -m "feat: add specific feature"
 - Exact commands with expected output
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
+- **Context efficiency** — All `.md` files under `docs/` must be read via Explore subagent (returns only relevant sections). Source code: native Claude Code behavior.
 
 ## RRI-T Plan Review
 
