@@ -15,6 +15,10 @@ Start by understanding the current project context, then ask questions one at a 
 Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
 </HARD-GATE>
 
+<HARD-GATE>
+The design doc MUST contain a ## Feature Summary section before it can be committed. If the design doc does not have this section, extract it now and get user confirmation before proceeding.
+</HARD-GATE>
+
 ## Anti-Pattern: "This Is Too Simple To Need A Design"
 
 Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
@@ -29,6 +33,7 @@ You MUST create a task for each of these items and complete them in order:
 3. **RRI-T Discovery** — invoke super-bear:rri-t with DISCOVER phase; 5 personas identify hidden requirements from their perspectives; present consolidated findings to user for approval; user decisions inform approach selection
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation, informed by discovery findings
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
+5b. **Extract Feature Summary** — after all design sections are approved, extract a numbered feature table. Present to user: "I found N features. Is this complete?" User confirms or adds missing features. This becomes the ## Feature Summary section in the design doc.
 6. **Write design doc** — save to `docs/plans/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Phase gate** — use AskUserQuestion to offer transition options (see Phase Gate section below)
 
@@ -53,6 +58,8 @@ digraph brainstorming {
     "Existing docs found?" [shape=diamond];
     "Triage (AskUserQuestion)" [shape=diamond];
     "Exit brainstorming" [shape=doublecircle];
+    "Extract Feature Summary" [shape=box];
+    "User confirms Feature Summary?" [shape=diamond];
 
     "Explore project context" -> "Existing docs found?" ;
     "Existing docs found?" -> "Triage (AskUserQuestion)" [label="yes"];
@@ -68,7 +75,10 @@ digraph brainstorming {
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc" [label="yes"];
+    "User approves design?" -> "Extract Feature Summary" [label="yes"];
+    "Extract Feature Summary" -> "User confirms Feature Summary?";
+    "User confirms Feature Summary?" -> "Extract Feature Summary" [label="adjust"];
+    "User confirms Feature Summary?" -> "Write design doc" [label="confirmed"];
     "Write design doc" -> "Commit design doc";
     "Commit design doc" -> "Phase gate (AskUserQuestion)";
     "Phase gate (AskUserQuestion)" -> "Clear context + invoke writing-plans" [label="Clear Context and Start Planning"];
@@ -86,6 +96,12 @@ digraph brainstorming {
 - Prefer multiple choice questions when possible, but open-ended is fine too
 - Only one question per message - if a topic needs more exploration, break it into multiple questions
 - Focus on understanding: purpose, constraints, success criteria
+
+**Deferral pickup (V2+):**
+- If triage (step 1b) identified this as a sub-feature or redesign of an existing feature, read the previous plan's ## Coverage section
+- Present all deferred items with count: "N items deferred last time: [list]. In scope now?"
+- User decides per item: pick up (include in new design), keep deferred (carry forward), or drop
+- Picked-up items become part of the new design; carried/dropped items are noted
 
 **Triage (step 1b):**
 - Only triggers when Explore subagent finds related docs in `docs/plans/`
@@ -129,8 +145,31 @@ After the user responds:
 
 ## After the Design
 
+**Feature Summary (step 5b):**
+
+After all design sections are approved, extract a compact feature table and present to the user for confirmation. The Feature Summary includes an inline instruction so any agent reading the design doc knows what to do with it:
+
+~~~markdown
+## Feature Summary
+> **For planning:** Use this table as your checklist. Every item must appear in the plan's ## Coverage section as either Planned or Deferred.
+
+| # | Feature | Section |
+|---|---------|---------|
+| F1 | [Feature name] | [Section ref] |
+| F2 | ... | ... |
+
+**Total: N features**
+~~~
+
+Rules:
+- The `> **For planning:**` instruction line makes the artifact self-describing — any agent reading the design doc knows what to do, even without loading the writing-plans skill
+- User confirms completeness — can add missing features
+- Immutable after commit — snapshot of what was agreed, not a living document
+- This section is included in the design doc before commit
+- Multi-feature designs: one table with all features, no need to split
+
 **Documentation:**
-- Write the validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
+- Write the validated design (including Feature Summary section) to `docs/plans/YYYY-MM-DD-<topic>-design.md`
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
