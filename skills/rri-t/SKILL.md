@@ -20,16 +20,17 @@ RRI-T (Reverse Requirements Interview — Testing) replaces the generic design-c
   - DISCOVER: project code + requirements
   - PLAN_REVIEW: implementation plan
   - POST_CODE_VERIFY: implemented code
-- `{PROJECT_CONTEXT}` — **REQUIRED for all phases.** Gather before spawning:
+- `{PROJECT_CONTEXT}` — **REQUIRED for all phases.** Read from the project's `CLAUDE.md` file, under `## Project Context`. This section is written once per project and contains:
   ```
-  - User count: [e.g., ~20 internal users]
-  - Deployment model: [e.g., single VPS with PM2, internal network]
-  - Public vs internal: [e.g., internal ERP behind auth]
-  - Auth model: [e.g., session-based, role-based with 5 roles]
-  - Existing infrastructure: [e.g., Next.js 14, Drizzle ORM, PostgreSQL]
-  - Threat model: [e.g., all users are trusted employees, no public-facing API]
+  ## Project Context
+  - User count: ~20 internal users
+  - Deployment: single VPS with PM2, internal network
+  - Public vs internal: internal ERP behind auth
+  - Auth: session-based, role-based with 5 roles
+  - Stack: Next.js 14, Drizzle ORM, PostgreSQL
+  - Threat model: trusted employees, no public API
   ```
-  This prevents personas from flagging issues that don't apply to the project.
+  The orchestrating skill (brainstorming or writing-plans) reads this section and passes it to agents via the `{PROJECT_CONTEXT}` placeholder. If the section doesn't exist in CLAUDE.md, ask the user to add it before proceeding.
 
 ## Phase Structures
 

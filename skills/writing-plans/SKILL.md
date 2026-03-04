@@ -217,7 +217,7 @@ Placeholders for PLAN_REVIEW personas:
 - `{MODULE_NAME}` — feature name
 - `{PHASE}` — "PLAN_REVIEW"
 - `{ARTIFACT_CONTENT}` — the full plan + Feature Summary from design doc
-- `{PROJECT_CONTEXT}` — project context (see `skills/rri-t/SKILL.md` Prerequisites)
+- `{PROJECT_CONTEXT}` — read from `CLAUDE.md` `## Project Context` section. If missing, ask user to add it.
 - **No `{MODULE_PATH}` or `{PROJECT_STRUCTURE}`** — personas don't read code
 
 ```
