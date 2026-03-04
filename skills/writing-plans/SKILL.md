@@ -180,24 +180,18 @@ After PLAN_REVIEW completes and user has decided on findings, spawn an independe
 
 ## Phase Gate — Execution Handoff
 
-After the plan passes RRI-T review, commit the implementation plan. Then use the `AskUserQuestion` tool to present transition options:
+After the plan passes RRI-T review, commit the implementation plan. Then use the `AskUserQuestion` tool to present execution options:
 
 Question: "Implementation plan is complete, reviewed, and committed. How would you like to start building?"
 
 Options:
-1. **"Clear Context, Commit All Plans, and Start Execution" (Recommended)** — Commits both design doc and implementation plan (if not already committed), clears conversation context, then starts execution fresh. Uses subagent-driven-development with the committed plan as input.
-2. **"Subagent-Driven (this session)"** — Stay in this session. Dispatch fresh subagent per task, review between tasks.
-3. **"Parallel Session (separate)"** — Open new session in worktree with executing-plans skill for batch execution.
-
-**If user chooses "Clear Context and Start Execution":**
-- Ensure both `docs/plans/<design>.md` and `docs/plans/<plan>.md` are committed
-- Summarize: "Starting fresh execution session. Plans committed at `docs/plans/`."
-- Use /clear or equivalent to reset context
-- Then invoke subagent-driven-development skill, reading the committed plan as the task list
+1. **"Subagent-Driven (this session)" (Recommended)** — Stay in this session. Dispatch fresh subagent per task, review between tasks. Suggest user `/clear` first if context is heavy.
+2. **"Parallel Session (separate)"** — Open new session in worktree with executing-plans skill for batch execution.
 
 **If user chooses "Subagent-Driven (this session)":**
+- Ensure both `docs/plans/<design>.md` and `docs/plans/<plan>.md` are committed
+- Summarize: "Plans committed at `docs/plans/`. Starting execution. (Tip: `/clear` first if you want fresh context.)"
 - **REQUIRED SUB-SKILL:** Use super-bear:subagent-driven-development
-- Stay in this session
 - Fresh subagent per task + code review
 
 **If user chooses "Parallel Session":**

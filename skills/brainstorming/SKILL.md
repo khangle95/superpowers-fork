@@ -35,7 +35,7 @@ You MUST create a task for each of these items and complete them in order:
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
 5b. **Extract Feature Summary** — after all design sections are approved, extract a numbered feature table. Present to user: "I found N features. Is this complete?" User confirms or adds missing features. This becomes the ## Feature Summary section in the design doc.
 6. **Write design doc** — save to `docs/plans/YYYY-MM-DD-<topic>-design.md` and commit
-7. **Phase gate** — use AskUserQuestion to offer transition options (see Phase Gate section below)
+7. **Transition to planning** — invoke writing-plans skill with committed design doc
 
 ## Process Flow
 
@@ -52,9 +52,7 @@ digraph brainstorming {
     "User approves design?" [shape=diamond];
     "Write design doc" [shape=box];
     "Commit design doc" [shape=box];
-    "Phase gate (AskUserQuestion)" [shape=diamond];
-    "Clear context + invoke writing-plans" [shape=doublecircle];
-    "Invoke writing-plans in this session" [shape=doublecircle];
+    "Invoke writing-plans" [shape=doublecircle];
     "Existing docs found?" [shape=diamond];
     "Triage (AskUserQuestion)" [shape=diamond];
     "Exit brainstorming" [shape=doublecircle];
@@ -80,13 +78,11 @@ digraph brainstorming {
     "User confirms Feature Summary?" -> "Extract Feature Summary" [label="adjust"];
     "User confirms Feature Summary?" -> "Write design doc" [label="confirmed"];
     "Write design doc" -> "Commit design doc";
-    "Commit design doc" -> "Phase gate (AskUserQuestion)";
-    "Phase gate (AskUserQuestion)" -> "Clear context + invoke writing-plans" [label="Clear Context and Start Planning"];
-    "Phase gate (AskUserQuestion)" -> "Invoke writing-plans in this session" [label="Continue here"];
+    "Commit design doc" -> "Invoke writing-plans";
 }
 ```
 
-**The terminal state is the phase gate.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skills invoked during brainstorming are rri-t (discovery phase, before approaches) and writing-plans (via the phase gate).
+**The terminal state is invoking writing-plans.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skills invoked during brainstorming are rri-t (discovery phase, before approaches) and writing-plans (after design is committed).
 
 ## The Process
 
@@ -175,21 +171,11 @@ Rules:
 
 **Phase Gate — Transition to Planning:**
 
-After the design doc is committed, use the `AskUserQuestion` tool to present the user with transition options:
+After the design doc is committed, summarize:
 
-Question: "Design is complete and committed. How would you like to proceed to implementation planning?"
+"Design complete and committed at `docs/plans/<filename>`. Ready for planning — invoke writing-plans skill or `/clear` first if you want a fresh context."
 
-Options:
-1. **"Clear Context and Start Planning" (Recommended)** — Clears the conversation context (brainstorming back-and-forth is no longer needed), then invokes writing-plans skill fresh with just the committed design doc as input. This gives the planning phase clean, focused context.
-2. **"Continue Planning in This Session"** — Keeps the current conversation context and invokes writing-plans directly. Use if you want to reference brainstorming discussion during planning.
-
-**If user chooses "Clear Context and Start Planning":**
-- Summarize: "Starting fresh planning session. The design doc at `docs/plans/<filename>` will be the input."
-- Use /clear or equivalent to reset context
-- Then invoke writing-plans skill, reading the committed design doc as the starting artifact
-
-**If user chooses "Continue here":**
-- Invoke writing-plans skill directly in the current session
+Then invoke writing-plans skill directly, reading the committed design doc as the starting artifact.
 
 ## Key Principles
 
