@@ -23,7 +23,8 @@ Every project goes through this process. A todo list, a single-function utility,
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Explore project context** — check files, docs, recent commits
+1. **Explore project context** — use Explore subagent to scan `docs/plans/` for related docs (returns Feature Summary and Coverage sections only, not full docs). Read relevant source code directly (native behavior).
+1b. **Triage (if existing docs found)** — present the user with: (a) Small implementation change → skip brainstorming, edit plan or go to execution; (b) New sub-feature addition → focused brainstorming with previous context; (c) Major redesign → full brainstorming. If no existing docs found, skip triage.
 2. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 3. **RRI-T Discovery** — invoke super-bear:rri-t with DISCOVER phase; 5 personas identify hidden requirements from their perspectives; present consolidated findings to user for approval; user decisions inform approach selection
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation, informed by discovery findings
@@ -49,8 +50,15 @@ digraph brainstorming {
     "Phase gate (AskUserQuestion)" [shape=diamond];
     "Clear context + invoke writing-plans" [shape=doublecircle];
     "Invoke writing-plans in this session" [shape=doublecircle];
+    "Existing docs found?" [shape=diamond];
+    "Triage (AskUserQuestion)" [shape=diamond];
+    "Exit brainstorming" [shape=doublecircle];
 
-    "Explore project context" -> "Ask clarifying questions";
+    "Explore project context" -> "Existing docs found?" ;
+    "Existing docs found?" -> "Triage (AskUserQuestion)" [label="yes"];
+    "Existing docs found?" -> "Ask clarifying questions" [label="no"];
+    "Triage (AskUserQuestion)" -> "Exit brainstorming" [label="small change"];
+    "Triage (AskUserQuestion)" -> "Ask clarifying questions" [label="sub-feature or redesign"];
     "Ask clarifying questions" -> "RRI-T Discovery (5 personas)";
     "RRI-T Discovery (5 personas)" -> "Findings found?";
     "Findings found?" -> "Present findings to user" [label="yes"];
@@ -78,6 +86,14 @@ digraph brainstorming {
 - Prefer multiple choice questions when possible, but open-ended is fine too
 - Only one question per message - if a topic needs more exploration, break it into multiple questions
 - Focus on understanding: purpose, constraints, success criteria
+
+**Triage (step 1b):**
+- Only triggers when Explore subagent finds related docs in `docs/plans/`
+- Present as AskUserQuestion with 3 options:
+  - **(a) Small implementation change** (format, library, parameter) → exit brainstorming, suggest plan edit or direct execution
+  - **(b) New sub-feature addition** (new capability on existing feature) → focused brainstorming reading previous design for context, produces new dated design doc for just the addition
+  - **(c) Major redesign** (rethink the feature) → full brainstorming from scratch
+- If no existing docs: skip triage entirely, proceed to step 2
 
 **Exploring approaches:**
 - Propose 2-3 different approaches with trade-offs
