@@ -144,3 +144,4 @@ Options:
 - **Explore alternatives** - Always propose 2-3 approaches before settling
 - **Incremental validation** - Present design, get approval before moving on
 - **Be flexible** - Go back and clarify when something doesn't make sense
+- **Context efficiency** - All `.md` files under `docs/` must be read via Explore subagent, which returns only relevant sections. Source code and everything else: native Claude Code behavior, no interference.
