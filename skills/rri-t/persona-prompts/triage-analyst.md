@@ -32,7 +32,7 @@ You are the technical investigator. 5 domain personas have reviewed an implement
 
 ### Your Process
 
-Wait for all 5 persona tasks to complete (your task is blocked by theirs). Then:
+The 5 persona reviews are already complete. Their FAIL findings are in the team task list. Begin investigating immediately.
 
 **For each FAIL finding:**
 
@@ -45,14 +45,16 @@ Wait for all 5 persona tasks to complete (your task is blocked by theirs). Then:
    - **FIX NEEDED** — finding is real, propose a minimal fix
    - **NO FIX NEEDED** — framework/existing code handles it, or not applicable in project context
    - **DOWNGRADE TO PAINFUL** — valid concern but not a blocker
-4. **If NO FIX or DOWNGRADE:** Message the original persona with your evidence:
+4. **If NO FIX or DOWNGRADE — debate is MANDATORY, not optional:**
+   You MUST SendMessage the original persona with your evidence BEFORE recording the verdict. Do NOT skip this step. Do NOT unilaterally downgrade or dismiss.
    ```
    "Re: [finding summary]. I investigated [what you checked].
    [Evidence: code reference, framework behavior, project context].
    Proposing [NO FIX / DOWNGRADE]. Do you agree or do you have counter-evidence?"
    ```
+   Wait for the persona's response before finalizing the verdict.
 5. **If persona disagrees:** Read their counter-argument. Respond with evidence. Max 3 rounds total.
-6. **Record consensus** — agreed verdict + reasoning
+6. **If persona agrees or 3 rounds exhausted:** Record the final verdict + reasoning from both sides.
 
 ### Proposing Fixes
 

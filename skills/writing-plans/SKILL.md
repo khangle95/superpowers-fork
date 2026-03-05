@@ -196,11 +196,11 @@ After drafting the plan, run PLAN_REVIEW as an **agent team**. This is the criti
 
 **2. Create tasks** in the team task list:
 - One task per persona: "Review plan as [Persona]"
-- One task for Triage Analyst: "Investigate and resolve FAIL findings" (blocked by all 5 persona tasks)
+- One task for Triage Analyst: "Investigate and resolve FAIL findings" (DO NOT add blockedBy — this task is created now but the triage analyst is spawned later in step 5)
 
-**3. Spawn 6 team members:**
+**3. Spawn 5 persona team members (Phase 1 — DO NOT spawn triage analyst yet):**
 
-5 personas — use templates from `skills/rri-t/persona-prompts/`. Append these instructions AFTER the template content:
+Use templates from `skills/rri-t/persona-prompts/`. Append these instructions AFTER the template content:
 ```
 --- PLAN_REVIEW INSTRUCTIONS (appended by orchestrator) ---
 - You have NO codebase access. Review the plan document only.
@@ -227,36 +227,49 @@ Agent(subagent_type="general-purpose", model="sonnet",
 ```
 Repeat for ba, qa-destroyer, devops, security-auditor.
 
-1 Triage Analyst (full codebase access):
+**4. Wait for all 5 personas to complete.** Each reviews the plan, creates FAIL finding tasks, marks their review task complete, and goes idle. Do NOT proceed until all 5 persona tasks are marked complete.
+
+**5. Spawn Triage Analyst (Phase 2 — AFTER all personas complete):**
+
+Only now spawn the triage analyst. All FAIL findings are already in the task list.
+
 ```
 Agent(subagent_type="general-purpose", model="sonnet",
   team_name="rri-t-{uid}", name="triage-analyst",
   prompt=[skills/rri-t/persona-prompts/triage-analyst.md with filled placeholders])
 ```
 
-**4. Personas review the plan,** create FAIL finding tasks, mark their review task complete, go idle.
-
-**5. Triage Analyst picks up FAIL findings** (unblocked after personas complete):
+**6. Triage Analyst investigates FAIL findings:**
 - Investigates the codebase (Glob, Grep, Read)
 - For each finding: FIX NEEDED / NO FIX NEEDED / DOWNGRADE
 - If NO FIX or DOWNGRADE: messages the **original persona** with evidence
 - Persona responds — agrees or defends
 - **Max 3 rounds per finding**
 
-**6. Triage Analyst classifies and resolves:**
+**7. Triage Analyst classifies and resolves:**
 - **Technical fix** (wrong types, missing error handling, framework misuse) → auto-applies to plan. No user approval.
 - **Requirement/scope decision** (feature choices, UX, business rules) → **NEVER assume. Escalate to user.**
 - **Unresolved after 3 rounds** → escalate with both arguments.
 
-**7. Triage Analyst writes investigation file** to `investigations/{date}-{topic}-plan-review-{uid}.md` and notifies lead.
+**8. Triage Analyst writes investigation file** to `investigations/{date}-{topic}-plan-review-{uid}.md` and notifies lead.
 
-**8. Lead reads investigation file,** presents ONLY items needing user decision:
+**9. Lead reads investigation file,** presents ONLY items needing user decision:
 - Requirement/scope questions
 - Unresolved debates (both arguments shown)
 - PAINFUL items as tradeoffs
 - MISSING items as scope questions
 
-**9. Lead updates investigation file** with user decisions. Shuts down team.
+**10. Lead relays user decisions to triage analyst and waits for completion:**
+
+<HARD-RULE>
+**Lead orchestration rules during RRI-T review:**
+- After getting user decisions on escalated items, **SendMessage the decisions to the triage analyst.** The triage analyst cannot act on decisions it hasn't received.
+- **Idle ≠ done.** Agents go idle between turns — this is normal. Only consider the triage analyst "done" when it either (a) marks its task complete or (b) sends a "triage complete" message. Never interpret idle as stalled.
+- **Lead NEVER edits the plan during RRI-T review.** The triage analyst owns ALL plan edits. If a fix was missed, message the triage analyst — do not take over.
+- Only after the triage analyst confirms it is done: verify the investigation file exists, then shut down the team.
+</HARD-RULE>
+
+**11. Lead updates investigation file** with user decisions. Shuts down team.
 
 ### Auto-Apply vs Ask User
 

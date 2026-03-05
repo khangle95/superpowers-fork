@@ -39,7 +39,7 @@ Each phase uses a different agent structure:
 | Phase | Structure | Personas get codebase? | Triage Analyst? |
 |-------|-----------|----------------------|-----------------|
 | DISCOVER | Fire-and-forget subagents | Yes | No |
-| PLAN_REVIEW | Agent team with debate | No (plan only) | Yes |
+| PLAN_REVIEW | Agent team with debate (2-phase spawn) | No (plan only) | Yes (spawned after personas complete) |
 | POST_CODE_VERIFY | Fire-and-forget subagents | Yes | No |
 
 ## Persona Structure
@@ -59,7 +59,7 @@ Each persona is spawned differently depending on phase (see Phase Structures abo
 All agents use `model: "sonnet"` — they read code/plans and write structured findings, which does not require Opus-level reasoning.
 
 DISCOVER/POST_CODE_VERIFY: 5 subagents run in parallel via `run_in_background: true`.
-PLAN_REVIEW: 6 team members (5 personas + Triage Analyst). Personas go idle after findings; Triage Analyst does the heavy work.
+PLAN_REVIEW: 2-phase spawn. Phase 1: 5 persona team members run in parallel. Phase 2: Triage Analyst spawned AFTER all personas complete. Personas stay alive (idle) for debate.
 
 ## Investigation Files
 
